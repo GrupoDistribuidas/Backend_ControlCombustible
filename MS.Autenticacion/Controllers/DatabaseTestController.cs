@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using MS.Autenticacion.Services;
+using MS.Autenticacion.Application.Services;
+using MS.Autenticacion.Domain.Interfaces;
 using System.Data;
 
 namespace MS.Autenticacion.Controllers
@@ -8,10 +9,10 @@ namespace MS.Autenticacion.Controllers
     [Route("api/[controller]")]
     public class DatabaseTestController : ControllerBase
     {
-        private readonly IDatabaseService _databaseService;
+        private readonly IDatabaseConnection _databaseService;
         private readonly ILogger<DatabaseTestController> _logger;
 
-        public DatabaseTestController(IDatabaseService databaseService, ILogger<DatabaseTestController> logger)
+        public DatabaseTestController(IDatabaseConnection databaseService, ILogger<DatabaseTestController> logger)
         {
             _databaseService = databaseService;
             _logger = logger;
