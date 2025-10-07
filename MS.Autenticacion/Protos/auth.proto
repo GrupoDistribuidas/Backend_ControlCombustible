@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Autenticacion.Grpc";
+
+package auth;
+
+// Servicio de autenticación
+service AuthService {
+  // Autentica un usuario y retorna un JWT
+  rpc Login (LoginRequest) returns (LoginResponse);
+  
+  // Valida un JWT token
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+}
+
+// Mensaje de solicitud de login
+message LoginRequest {
+  string username = 1;  // Nombre de usuario
+  string password = 2;  // Contraseña
+}
+
+// Mensaje de respuesta de login
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  string token = 3;
+  UserInfo user = 4;
+  int64 expires_at = 5;  // Timestamp de expiración del token
+}
+
+// Información del usuario
+message UserInfo {
+  int32 id = 1;
+  string email = 2;
+  string nombre_usuario = 3;
+  int32 rol_id = 4;
+  string rol_nombre = 5;  // Nombre del rol
+  int32 estado = 6;
+  string fecha_creacion = 7;
+  string ultimo_acceso = 8;
+}
+
+// Solicitud de validación de token
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+// Respuesta de validación de token
+message ValidateTokenResponse {
+  bool is_valid = 1;
+  string message = 2;
+  UserInfo user = 3;
+  int64 expires_at = 4;  // Timestamp de expiración del token
+}
