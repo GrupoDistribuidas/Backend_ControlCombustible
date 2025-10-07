@@ -1,4 +1,5 @@
 using MS.Combustible.Services;
+using DotNetEnv;
 
 namespace MS.Combustible
 {
@@ -6,16 +7,40 @@ namespace MS.Combustible
     {
         public static void Main(string[] args)
         {
+            // Cargar variables del archivo .env
+            DotNetEnv.Env.Load("../.env");
+            
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
             builder.Services.AddGrpc();
+            
+            // Agregar controladores para endpoints HTTP
+            builder.Services.AddControllers();
+            
+            // Registrar el servicio de base de datos
+            builder.Services.AddScoped<IDatabaseService, DatabaseService>();
+            
+            // Agregar Swagger para documentación de la API
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+
+            // Configurar gRPC
             app.MapGrpcService<GreeterService>();
-            app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+            
+            // Configurar controladores HTTP
+            app.MapControllers();
+            
+            app.MapGet("/", () => "Microservicio de Combustible - gRPC y HTTP endpoints disponibles. Swagger: /swagger");
 
             app.Run();
         }
