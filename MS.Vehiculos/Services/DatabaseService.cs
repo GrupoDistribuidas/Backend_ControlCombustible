@@ -27,7 +27,7 @@ namespace MS.Vehiculos.Services
 
             _connectionString = $"Server={host};Port={port};Database={database};Uid={user};Pwd={password};";
 
-            _logger.LogInformation($"Configuración VehiclesDB: Host={host}, Port={port}, Database={database}, User={user}");
+            _logger.LogInformation($"Configuración VehiclesDB: Host={host}, Port={port}, Database={database}");
         }
 
         public async Task<bool> TestConnectionAsync()
