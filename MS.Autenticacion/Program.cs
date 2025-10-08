@@ -34,6 +34,7 @@ namespace MS.Autenticacion
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IRolRepository, RolRepository>();
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
             // Configuración JWT
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET no configurado en .env");
