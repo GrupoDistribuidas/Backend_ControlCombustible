@@ -7,5 +7,7 @@ namespace MS.Autenticacion.Domain.Interfaces
         Task<(bool Success, string Token, string Message)> LoginAsync(string username, string password);
         Task<(bool IsValid, User? User, string Message, DateTime? ExpiresAt)> ValidateTokenAsync(string token);
         string GenerateJwtToken(User user, Rol? rol = null);
+        string GenerateTemporaryPassword();
+        Task<(bool Success, string Message)> SendTemporaryPasswordAsync(string usernameOrEmail);
     }
 }

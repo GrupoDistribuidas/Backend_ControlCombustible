@@ -77,6 +77,29 @@ namespace MS.Autenticacion.Infrastructure.Repositories
             }
         }
 
+        public async Task<bool> UpdatePasswordAsync(int userId, string newPasswordHash)
+        {
+            try
+            {
+                var query = "UPDATE usuarios SET PasswordHash = @passwordHash, FechaModificacion = @fechaModificacion WHERE Id = @userId";
+                var parameters = new[]
+                {
+                    new MySqlParameter("@passwordHash", newPasswordHash),
+                    new MySqlParameter("@fechaModificacion", DateTime.UtcNow),
+                    new MySqlParameter("@userId", userId)
+                };
+
+                var affectedRows = await _dbConnection.ExecuteNonQueryAsync(query, parameters);
+                _logger.LogInformation("Contraseña actualizada para UserId: {UserId}", userId);
+                return affectedRows > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar contraseña para UserId: {UserId}", userId);
+                return false;
+            }
+        }
+
         private User MapDataRowToUser(DataRow row)
         {
             return new User

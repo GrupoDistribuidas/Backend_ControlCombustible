@@ -15,13 +15,15 @@ namespace MS.Autenticacion.Application.Services
         private readonly IRolRepository _rolRepository;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
+        private readonly IEmailService _emailService;
 
-        public AuthService(IUserRepository userRepository, IRolRepository rolRepository, IConfiguration configuration, ILogger<AuthService> logger)
+        public AuthService(IUserRepository userRepository, IRolRepository rolRepository, IConfiguration configuration, ILogger<AuthService> logger, IEmailService emailService)
         {
             _userRepository = userRepository;
             _rolRepository = rolRepository;
             _configuration = configuration;
             _logger = logger;
+            _emailService = emailService;
         }
 
         public async Task<(bool Success, string Token, string Message)> LoginAsync(string username, string password)
@@ -167,6 +169,100 @@ namespace MS.Autenticacion.Application.Services
             
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public string GenerateTemporaryPassword()
+        {
+            const string upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string lowerCase = "abcdefghijklmnopqrstuvwxyz";
+            const string digits = "0123456789";
+            const string specialChars = "!@#$%&*";
+
+            var random = new Random();
+            var password = new StringBuilder();
+
+            // Asegurar al menos un carácter de cada tipo
+            password.Append(upperCase[random.Next(upperCase.Length)]);
+            password.Append(lowerCase[random.Next(lowerCase.Length)]);
+            password.Append(digits[random.Next(digits.Length)]);
+            password.Append(specialChars[random.Next(specialChars.Length)]);
+
+            // Completar con caracteres aleatorios hasta llegar a 8 caracteres
+            const string allChars = upperCase + lowerCase + digits + specialChars;
+            for (int i = 4; i < 8; i++)
+            {
+                password.Append(allChars[random.Next(allChars.Length)]);
+            }
+
+            // Mezclar los caracteres
+            var passwordArray = password.ToString().ToCharArray();
+            for (int i = passwordArray.Length - 1; i > 0; i--)
+            {
+                int j = random.Next(i + 1);
+                char temp = passwordArray[i];
+                passwordArray[i] = passwordArray[j];
+                passwordArray[j] = temp;
+            }
+
+            return new string(passwordArray);
+        }
+
+        public async Task<(bool Success, string Message)> SendTemporaryPasswordAsync(string usernameOrEmail)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(usernameOrEmail))
+                    return (false, "Debe proporcionar un nombre de usuario o email");
+
+                // Buscar usuario por nombre de usuario o email
+                var user = await _userRepository.GetByNombreUsuarioAsync(usernameOrEmail);
+                if (user == null)
+                {
+                    user = await _userRepository.GetByEmailAsync(usernameOrEmail);
+                }
+
+                if (user == null || user.Estado != 1)
+                {
+                    _logger.LogWarning("Intento de recuperación de contraseña para usuario inexistente: {UsernameOrEmail}", usernameOrEmail);
+                    // Por seguridad, devolver mensaje genérico
+                    return (true, "El usuario no existe o no está activo.");
+                }
+
+                // Generar contraseña temporal
+                var temporaryPassword = GenerateTemporaryPassword();
+
+                // Hash de la nueva contraseña
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(temporaryPassword);
+
+                // Actualizar contraseña en la base de datos
+                var updateResult = await _userRepository.UpdatePasswordAsync(user.Id, hashedPassword);
+                if (!updateResult)
+                {
+                    _logger.LogError("Error actualizando contraseña para usuario {UserId}", user.Id);
+                    return (false, "Error interno del servidor");
+                }
+
+                // Enviar email con la contraseña temporal
+                var emailSent = await _emailService.SendPasswordByEmailAsync(
+                    user.Email, 
+                    user.NombreUsuario, 
+                    user.NombreUsuario, 
+                    temporaryPassword);
+
+                if (!emailSent)
+                {
+                    _logger.LogError("Error enviando email a {Email} para usuario {UserId}", user.Email, user.Id);
+                    return (false, "Error enviando el email. Contacte al administrador.");
+                }
+
+                _logger.LogInformation("Contraseña temporal enviada por email para usuario {Username}", user.NombreUsuario);
+                return (true, "Se ha enviado la contraseña temporal al email registrado");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generando contraseña temporal");
+                return (false, "Error interno del servidor");
+            }
         }
     }
 }

@@ -92,5 +92,72 @@ namespace MS.Autenticacion.Application.Services
                 };
             }
         }
+
+        public override async Task<ForgotPasswordResponse> ForgotPassword(ForgotPasswordRequest request, ServerCallContext context)
+        {
+            try
+            {
+                _logger.LogInformation("Solicitud de recuperación de contraseña para: {UsernameOrEmail}", request.UsernameOrEmail);
+
+                var (success, message) = await _authService.SendTemporaryPasswordAsync(request.UsernameOrEmail);
+
+                var response = new ForgotPasswordResponse
+                {
+                    Success = success,
+                    Message = message
+                };
+
+                if (success)
+                {
+                    _logger.LogInformation("Contraseña temporal enviada exitosamente para: {UsernameOrEmail}", request.UsernameOrEmail);
+                }
+                else
+                {
+                    _logger.LogWarning("Fallo en envío de contraseña temporal para: {UsernameOrEmail}", request.UsernameOrEmail);
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error durante la recuperación de contraseña");
+                return new ForgotPasswordResponse
+                {
+                    Success = false,
+                    Message = "Error interno del servidor"
+                };
+            }
+        }
+
+        public override Task<GenerateTemporaryPasswordResponse> GenerateTemporaryPassword(GenerateTemporaryPasswordRequest request, ServerCallContext context)
+        {
+            try
+            {
+                _logger.LogInformation("Solicitud de generación de contraseña temporal");
+
+                var temporaryPassword = _authService.GenerateTemporaryPassword();
+
+                var response = new GenerateTemporaryPasswordResponse
+                {
+                    Success = true,
+                    TemporaryPassword = temporaryPassword,
+                    Message = "Contraseña temporal generada exitosamente"
+                };
+
+                _logger.LogInformation("Contraseña temporal generada exitosamente");
+
+                return Task.FromResult(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generando contraseña temporal");
+                return Task.FromResult(new GenerateTemporaryPasswordResponse
+                {
+                    Success = false,
+                    TemporaryPassword = string.Empty,
+                    Message = "Error interno del servidor"
+                });
+            }
+        }
     }
 }

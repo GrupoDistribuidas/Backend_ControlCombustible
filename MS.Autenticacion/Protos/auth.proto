@@ -11,6 +11,12 @@ service AuthService {
   
   // Valida un JWT token
   rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+  
+  // Solicita envío de contraseña temporal por email
+  rpc ForgotPassword (ForgotPasswordRequest) returns (ForgotPasswordResponse);
+  
+  // Genera una contraseña temporal (para pruebas)
+  rpc GenerateTemporaryPassword (GenerateTemporaryPasswordRequest) returns (GenerateTemporaryPasswordResponse);
 }
 
 // Mensaje de solicitud de login
@@ -51,4 +57,27 @@ message ValidateTokenResponse {
   string message = 2;
   UserInfo user = 3;
   int64 expires_at = 4;  // Timestamp de expiración del token
+}
+
+// Solicitud de recuperación de contraseña
+message ForgotPasswordRequest {
+  string username_or_email = 1;  // Nombre de usuario o email
+}
+
+// Respuesta de recuperación de contraseña
+message ForgotPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Solicitud de generación de contraseña temporal
+message GenerateTemporaryPasswordRequest {
+  // Vacío - no requiere parámetros
+}
+
+// Respuesta de generación de contraseña temporal
+message GenerateTemporaryPasswordResponse {
+  bool success = 1;
+  string temporary_password = 2;
+  string message = 3;
 }
