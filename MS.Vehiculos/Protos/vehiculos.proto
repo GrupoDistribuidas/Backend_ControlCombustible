@@ -56,6 +56,22 @@ message ExistsByPlacaResponse {
   bool exists = 1;
 }
 
+message SearchRequest {
+  google.protobuf.BoolValue estado = 1;
+  google.protobuf.Int32Value tipoMaquinariaId = 2;
+  string marca = 3;
+  string modelo = 4;
+  google.protobuf.DoubleValue capacidadMin = 5;
+  google.protobuf.DoubleValue capacidadMax = 6;
+  google.protobuf.DoubleValue consumoMin = 7;
+  google.protobuf.DoubleValue consumoMax = 8;
+  string disponible = 9;
+}
+
+message SearchByTermRequest {
+  string term = 1;
+}
+
 message VehiculoDto {
   int32 id = 1;
   string nombre = 2;
@@ -74,4 +90,6 @@ service VehiculosService {
   rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
   rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
   rpc ExistsByPlaca (ExistsByPlacaRequest) returns (ExistsByPlacaResponse);
+  rpc Search (SearchRequest) returns (stream VehiculoDto);
+  rpc SearchByTerm (SearchByTermRequest) returns (stream VehiculoDto);
 }
