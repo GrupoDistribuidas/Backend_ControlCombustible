@@ -15,6 +15,16 @@ namespace ApiGateway
 
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Services:AuthService:Url"] = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL"),
+                ["Services:VehiculosService:Url"] = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL"),
+                ["Services:ChoferesService:Url"] = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL"),
+                ["Services:CombustibleService:Url"] = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL"),
+                ["Services:RutasService:Url"] = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL")
+            }.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+
             // Agregar controladores
             builder.Services.AddControllers();
 
@@ -24,10 +34,31 @@ namespace ApiGateway
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "API Gateway",
-                    Version = "v1",
-                    Description = "Gateway de microservicios con autenticación JWT y control de roles"
+                    Title = "API Gateway - Control de Combustible",
+                    Version = "v1.0",
+                    Description = @"
+## API Gateway para Sistema de Control de Combustible
+
+Este API Gateway centraliza el acceso a todos los microservicios del sistema de control de combustible.
+
+### Autenticación:
+1. Usar endpoint `/auth/login` para obtener token JWT
+2. Incluir token en header: `Authorization: Bearer {token}`
+3. El token expira según configuración del sistema",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Equipo de Desarrollo",
+                        Email = "dev@controlcombustible.com"
+                    }
                 });
+
+                // Incluir comentarios XML para documentación detallada
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+                }
 
                 // 🔒 Configurar el esquema de seguridad Bearer
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -37,7 +68,15 @@ namespace ApiGateway
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Introduce tu token JWT en el formato: Bearer {token}"
+                    Description = @"
+Introduce tu token JWT en el formato: **Bearer {token}**
+
+Ejemplo: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+Para obtener un token:
+1. Usar el endpoint `/auth/login` 
+2. Copiar el valor del campo `token` de la respuesta
+3. Agregarlo aquí con el prefijo 'Bearer '"
                 });
 
                 // 🔐 Requerir el token para endpoints protegidos
@@ -55,6 +94,9 @@ namespace ApiGateway
                         new string[] {}
                     }
                 });
+
+                // Configurar generación de documentación adicional
+                options.DescribeAllParametersInCamelCase();
             });
 
             // Configurar gRPC client factory (para llamar a MS.Autenticacion)
