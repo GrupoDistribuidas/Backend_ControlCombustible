@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <Protobuf Include="..\MS.Autenticacion\Protos\auth.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\vehiculos.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\tipos.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>
