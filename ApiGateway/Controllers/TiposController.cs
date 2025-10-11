@@ -4,12 +4,17 @@ using MS.Vehiculos.Protos;
 using Grpc.Net.Client;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using System.ComponentModel.DataAnnotations;
 
 namespace ApiGateway.Controllers
 {
+    /// <summary>
+    /// Controlador para la gestión de tipos de maquinaria
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize] // Requiere JWT para todos los endpoints
+    [Produces("application/json")]
     public class TiposController : ControllerBase
     {
         private readonly ILogger<TiposController> _logger;
@@ -22,10 +27,16 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Lista todos los tipos de maquinaria
+        /// Obtiene todos los tipos de maquinaria disponibles en el sistema
         /// </summary>
-        /// <returns>Lista de tipos de maquinaria</returns>
+        /// <returns>Lista completa de tipos de maquinaria con sus detalles</returns>
+        /// <response code="200">Lista de tipos obtenida exitosamente</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> ListarTipos()
         {
             try

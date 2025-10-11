@@ -4,12 +4,17 @@ using MS.Vehiculos.Protos;
 using Grpc.Net.Client;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using System.ComponentModel.DataAnnotations;
 
 namespace ApiGateway.Controllers
 {
+    /// <summary>
+    /// Controlador para la gestión de vehículos
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize] // Requiere JWT para todos los endpoints
+    [Produces("application/json")]
     public class VehiculosController : ControllerBase
     {
         private readonly ILogger<VehiculosController> _logger;
@@ -22,11 +27,19 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Crea un nuevo vehículo
+        /// Crea un nuevo vehículo en el sistema
         /// </summary>
         /// <param name="request">Datos del vehículo a crear</param>
         /// <returns>ID del vehículo creado</returns>
+        /// <response code="200">Vehículo creado exitosamente</response>
+        /// <response code="400">Datos inválidos o placa ya registrada</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpPost]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> CrearVehiculo([FromBody] CrearVehiculoRequestDto request)
         {
             try
@@ -63,10 +76,16 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Lista todos los vehículos
+        /// Lista todos los vehículos registrados en el sistema
         /// </summary>
-        /// <returns>Lista de vehículos</returns>
+        /// <returns>Lista completa de vehículos con sus detalles</returns>
+        /// <response code="200">Lista de vehículos obtenida exitosamente</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> ListarVehiculos()
         {
             try
@@ -109,12 +128,22 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Actualiza un vehículo existente
+        /// Actualiza los datos de un vehículo existente
         /// </summary>
-        /// <param name="id">ID del vehículo</param>
+        /// <param name="id">ID único del vehículo a actualizar</param>
         /// <param name="request">Datos actualizados del vehículo</param>
-        /// <returns>Resultado de la actualización</returns>
+        /// <returns>Resultado de la operación de actualización</returns>
+        /// <response code="200">Vehículo actualizado exitosamente</response>
+        /// <response code="400">Datos inválidos o ID no encontrado</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="404">Vehículo no encontrado</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> ActualizarVehiculo(int id, [FromBody] ActualizarVehiculoRequestDto request)
         {
             try
@@ -157,12 +186,22 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Actualiza el estado de un vehículo
+        /// Actualiza únicamente el estado de un vehículo (activo/inactivo)
         /// </summary>
-        /// <param name="id">ID del vehículo</param>
-        /// <param name="request">Nuevo estado</param>
-        /// <returns>Resultado de la actualización</returns>
+        /// <param name="id">ID único del vehículo</param>
+        /// <param name="request">Nuevo estado del vehículo</param>
+        /// <returns>Resultado de la actualización del estado</returns>
+        /// <response code="200">Estado actualizado exitosamente</response>
+        /// <response code="400">Datos inválidos</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="404">Vehículo no encontrado</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpPatch("{id}/estado")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> ActualizarEstadoVehiculo(int id, [FromBody] ActualizarEstadoRequestDto request)
         {
             try
@@ -193,11 +232,19 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Verifica si existe un vehículo con la placa especificada
+        /// Verifica si existe un vehículo registrado con la placa especificada
         /// </summary>
-        /// <param name="placa">Placa a verificar</param>
-        /// <returns>True si existe, false en caso contrario</returns>
+        /// <param name="placa">Placa del vehículo a verificar</param>
+        /// <returns>Indica si existe un vehículo con esa placa</returns>
+        /// <response code="200">Consulta realizada exitosamente</response>
+        /// <response code="400">Placa inválida</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpGet("exists/{placa}")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> ExistsByPlaca(string placa)
         {
             try
@@ -227,19 +274,27 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Busca vehículos por filtros avanzados
+        /// Busca vehículos utilizando filtros avanzados
         /// </summary>
-        /// <param name="estado">Estado del vehículo (opcional)</param>
-        /// <param name="tipoMaquinariaId">ID del tipo de maquinaria (opcional)</param>
-        /// <param name="marca">Marca del vehículo (opcional)</param>
-        /// <param name="modelo">Modelo del vehículo (opcional)</param>
-        /// <param name="capacidadMin">Capacidad mínima de combustible (opcional)</param>
-        /// <param name="capacidadMax">Capacidad máxima de combustible (opcional)</param>
-        /// <param name="consumoMin">Consumo mínimo por km (opcional)</param>
-        /// <param name="consumoMax">Consumo máximo por km (opcional)</param>
-        /// <param name="disponible">Estado de disponibilidad (opcional)</param>
-        /// <returns>Lista de vehículos que coinciden con los filtros</returns>
+        /// <param name="estado">Estado del vehículo (activo/inactivo) - opcional</param>
+        /// <param name="tipoMaquinariaId">ID del tipo de maquinaria - opcional</param>
+        /// <param name="marca">Marca del vehículo - opcional</param>
+        /// <param name="modelo">Modelo del vehículo - opcional</param>
+        /// <param name="capacidadMin">Capacidad mínima de combustible en litros - opcional</param>
+        /// <param name="capacidadMax">Capacidad máxima de combustible en litros - opcional</param>
+        /// <param name="consumoMin">Consumo mínimo por kilómetro - opcional</param>
+        /// <param name="consumoMax">Consumo máximo por kilómetro - opcional</param>
+        /// <param name="disponible">Estado de disponibilidad del vehículo - opcional</param>
+        /// <returns>Lista filtrada de vehículos que coinciden con los criterios especificados</returns>
+        /// <response code="200">Búsqueda realizada exitosamente</response>
+        /// <response code="400">Parámetros de búsqueda inválidos</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpGet("search")]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Search(
             [FromQuery] bool? estado = null,
             [FromQuery] int? tipoMaquinariaId = null,
@@ -312,11 +367,19 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
-        /// Busca vehículos por término general
+        /// Busca vehículos utilizando un término general de búsqueda
         /// </summary>
-        /// <param name="term">Término de búsqueda</param>
-        /// <returns>Lista de vehículos que coinciden con el término</returns>
+        /// <param name="term">Término de búsqueda (busca en nombre, placa, marca, modelo)</param>
+        /// <returns>Lista de vehículos que coinciden con el término de búsqueda</returns>
+        /// <response code="200">Búsqueda por término realizada exitosamente</response>
+        /// <response code="400">Término de búsqueda inválido</response>
+        /// <response code="401">Token JWT no válido o ausente</response>
+        /// <response code="500">Error interno del servidor</response>
         [HttpGet("search/{term}")]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> SearchByTerm(string term)
         {
             try
@@ -365,33 +428,150 @@ namespace ApiGateway.Controllers
     }
 
     // DTOs para las requests REST
+    /// <summary>
+    /// Datos requeridos para crear un nuevo vehículo
+    /// </summary>
     public class CrearVehiculoRequestDto
     {
+        /// <summary>
+        /// Nombre descriptivo del vehículo
+        /// </summary>
+        /// <example>Camión de Carga Pesada</example>
+        [Required(ErrorMessage = "El nombre es requerido")]
         public string Nombre { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Placa única del vehículo
+        /// </summary>
+        /// <example>ABC-1234</example>
+        [Required(ErrorMessage = "La placa es requerida")]
         public string Placa { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Marca del vehículo
+        /// </summary>
+        /// <example>Volvo</example>
+        [Required(ErrorMessage = "La marca es requerida")]
         public string Marca { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Modelo del vehículo
+        /// </summary>
+        /// <example>FH16</example>
+        [Required(ErrorMessage = "El modelo es requerido")]
         public string Modelo { get; set; } = string.Empty;
+
+        /// <summary>
+        /// ID del tipo de maquinaria
+        /// </summary>
+        /// <example>1</example>
+        [Required(ErrorMessage = "El tipo de maquinaria es requerido")]
         public int TipoMaquinariaId { get; set; }
+
+        /// <summary>
+        /// Estado de disponibilidad del vehículo
+        /// </summary>
+        /// <example>disponible</example>
+        [Required(ErrorMessage = "El estado de disponibilidad es requerido")]
         public string Disponible { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Consumo de combustible por kilómetro
+        /// </summary>
+        /// <example>0.35</example>
+        [Required(ErrorMessage = "El consumo de combustible es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El consumo debe ser mayor a 0")]
         public double ConsumoCombustibleKm { get; set; }
+
+        /// <summary>
+        /// Capacidad del tanque de combustible en litros
+        /// </summary>
+        /// <example>500.0</example>
+        [Required(ErrorMessage = "La capacidad de combustible es requerida")]
+        [Range(1, double.MaxValue, ErrorMessage = "La capacidad debe ser mayor a 0")]
         public double CapacidadCombustible { get; set; }
     }
 
+    /// <summary>
+    /// Datos para actualizar un vehículo existente
+    /// </summary>
     public class ActualizarVehiculoRequestDto
     {
+        /// <summary>
+        /// Nombre descriptivo del vehículo
+        /// </summary>
+        /// <example>Camión de Carga Pesada Actualizado</example>
+        [Required(ErrorMessage = "El nombre es requerido")]
         public string Nombre { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Placa única del vehículo
+        /// </summary>
+        /// <example>ABC-1234</example>
+        [Required(ErrorMessage = "La placa es requerida")]
         public string Placa { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Marca del vehículo
+        /// </summary>
+        /// <example>Volvo</example>
+        [Required(ErrorMessage = "La marca es requerida")]
         public string Marca { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Modelo del vehículo
+        /// </summary>
+        /// <example>FH16</example>
+        [Required(ErrorMessage = "El modelo es requerido")]
         public string Modelo { get; set; } = string.Empty;
+
+        /// <summary>
+        /// ID del tipo de maquinaria
+        /// </summary>
+        /// <example>1</example>
+        [Required(ErrorMessage = "El tipo de maquinaria es requerido")]
         public int TipoMaquinariaId { get; set; }
+
+        /// <summary>
+        /// Estado de disponibilidad del vehículo
+        /// </summary>
+        /// <example>disponible</example>
+        [Required(ErrorMessage = "El estado de disponibilidad es requerido")]
         public string Disponible { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Consumo de combustible por kilómetro
+        /// </summary>
+        /// <example>0.35</example>
+        [Required(ErrorMessage = "El consumo de combustible es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El consumo debe ser mayor a 0")]
         public double ConsumoCombustibleKm { get; set; }
+
+        /// <summary>
+        /// Capacidad del tanque de combustible en litros
+        /// </summary>
+        /// <example>500.0</example>
+        [Required(ErrorMessage = "La capacidad de combustible es requerida")]
+        [Range(1, double.MaxValue, ErrorMessage = "La capacidad debe ser mayor a 0")]
         public double CapacidadCombustible { get; set; }
+
+        /// <summary>
+        /// Estado activo/inactivo del vehículo (opcional)
+        /// </summary>
+        /// <example>true</example>
         public bool? Estado { get; set; }
     }
 
+    /// <summary>
+    /// Datos para actualizar únicamente el estado de un vehículo
+    /// </summary>
     public class ActualizarEstadoRequestDto
     {
+        /// <summary>
+        /// Nuevo estado del vehículo (true = activo, false = inactivo)
+        /// </summary>
+        /// <example>true</example>
+        [Required(ErrorMessage = "El estado es requerido")]
         public bool Estado { get; set; }
     }
 }
