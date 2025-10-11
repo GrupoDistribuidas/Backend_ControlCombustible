@@ -64,5 +64,54 @@ namespace MS.Vehiculos.Services
                 });
             }
         }
+
+        public override async Task<MS.Vehiculos.Protos.ActualizarVehiculoResponse> ActualizarVehiculo(MS.Vehiculos.Protos.ActualizarVehiculoRequest request, ServerCallContext context)
+        {
+                var dto = new AppDtos.ActualizarVehiculoDto
+            {
+                Id = request.Id,
+                Nombre = request.Nombre,
+                Placa = request.Placa,
+                Marca = request.Marca,
+                Modelo = request.Modelo,
+                TipoMaquinariaId = request.TipoMaquinariaId,
+                Disponible = request.Disponible,
+                ConsumoCombustibleKm = (decimal)request.ConsumoCombustibleKm,
+                CapacidadCombustible = (decimal)request.CapacidadCombustible,
+                    Estado = request.Estado != null ? (bool?)request.Estado.Value : null
+            };
+
+            try
+            {
+                var affected = await _vehiculoService.ActualizarVehiculoAsync(dto);
+                return new MS.Vehiculos.Protos.ActualizarVehiculoResponse { Affected = affected };
+            }
+            catch (ArgumentException ex)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al actualizar vehículo"));
+            }
+        }
+
+        public override async Task<MS.Vehiculos.Protos.ActualizarEstadoResponse> ActualizarEstadoVehiculo(MS.Vehiculos.Protos.ActualizarEstadoRequest request, ServerCallContext context)
+        {
+            try
+            {
+                if (request.Estado == null) throw new ArgumentException("Estado es requerido");
+                var affected = await _vehiculoService.ActualizarEstadoAsync(request.Id, request.Estado.Value);
+                return new MS.Vehiculos.Protos.ActualizarEstadoResponse { Affected = affected };
+            }
+            catch (ArgumentException ex)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al actualizar estado"));
+            }
+        }
     }
 }

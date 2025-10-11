@@ -72,5 +72,59 @@ namespace MS.Vehiculos.Application.Services
                 CapacidadCombustible = v.CapacidadCombustible
             });
         }
+
+        public async Task<int> ActualizarVehiculoAsync(ActualizarVehiculoDto dto)
+        {
+            // Validaciones
+            var errors = new List<string>();
+            if (dto.Id <= 0) errors.Add("Id inválido");
+            if (string.IsNullOrWhiteSpace(dto.Placa)) errors.Add("Placa es obligatoria");
+            if (string.IsNullOrWhiteSpace(dto.Nombre)) errors.Add("Nombre es obligatorio");
+            if (string.IsNullOrWhiteSpace(dto.Marca)) errors.Add("Marca es obligatoria");
+            if (string.IsNullOrWhiteSpace(dto.Modelo)) errors.Add("Modelo es obligatorio");
+            if (dto.TipoMaquinariaId <= 0) errors.Add("TipoMaquinariaId inválido");
+            if (dto.ConsumoCombustibleKm <= 0) errors.Add("ConsumoCombustibleKm debe ser mayor que 0");
+            if (dto.CapacidadCombustible <= 0) errors.Add("CapacidadCombustible debe ser mayor que 0");
+            if (errors.Any()) throw new ArgumentException(string.Join("; ", errors));
+
+            // Existe vehículo?
+            var existing = await _repo.GetByIdAsync(dto.Id);
+            if (existing == null) throw new ArgumentException("Vehículo no encontrado");
+
+            // placa única
+            var byPlaca = await _repo.GetByPlacaAsync(dto.Placa);
+            if (byPlaca != null && byPlaca.Id != dto.Id) throw new ArgumentException("Placa ya registrada");
+
+            // Tipo existe
+            var tipo = await _tipoRepo.GetByIdAsync(dto.TipoMaquinariaId);
+            if (tipo == null) throw new ArgumentException("TipoMaquinaria no existe");
+
+            var veh = new MS.Vehiculos.Domain.Entities.Vehiculo
+            {
+                Id = dto.Id,
+                Nombre = dto.Nombre,
+                Placa = dto.Placa,
+                Marca = dto.Marca,
+                Modelo = dto.Modelo,
+                TipoMaquinariaId = dto.TipoMaquinariaId,
+                Disponible = dto.Disponible,
+                ConsumoCombustibleKm = dto.ConsumoCombustibleKm,
+                CapacidadCombustible = dto.CapacidadCombustible,
+                Estado = dto.Estado ?? existing.Estado
+            };
+
+            return await _repo.UpdateAsync(veh, dto.Estado);
+        }
+
+        public async Task<int> ActualizarEstadoAsync(int id, bool estado)
+        {
+            if (id <= 0) throw new ArgumentException("Id inválido");
+
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) throw new ArgumentException("Vehículo no encontrado");
+
+            existing.Estado = estado;
+            return await _repo.UpdateAsync(existing, estado);
+        }
     }
 }
