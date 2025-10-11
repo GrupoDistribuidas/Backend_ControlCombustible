@@ -15,6 +15,16 @@ namespace ApiGateway
 
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Services:AuthService:Url"] = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL"),
+                ["Services:VehiculosService:Url"] = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL"),
+                ["Services:ChoferesService:Url"] = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL"),
+                ["Services:CombustibleService:Url"] = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL"),
+                ["Services:RutasService:Url"] = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL")
+            }.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+
             // Agregar controladores
             builder.Services.AddControllers();
 
