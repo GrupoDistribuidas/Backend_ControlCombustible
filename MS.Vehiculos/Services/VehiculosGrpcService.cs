@@ -113,5 +113,18 @@ namespace MS.Vehiculos.Services
                 throw new RpcException(new Status(StatusCode.Internal, "Error interno al actualizar estado"));
             }
         }
+
+        public override async Task<MS.Vehiculos.Protos.ExistsByPlacaResponse> ExistsByPlaca(MS.Vehiculos.Protos.ExistsByPlacaRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var exists = await _vehiculoService.ExistsByPlacaAsync(request.Placa);
+                return new MS.Vehiculos.Protos.ExistsByPlacaResponse { Exists = exists };
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al verificar placa"));
+            }
+        }
     }
 }

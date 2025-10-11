@@ -126,5 +126,12 @@ namespace MS.Vehiculos.Application.Services
             existing.Estado = estado;
             return await _repo.UpdateAsync(existing, estado);
         }
+
+        public async Task<bool> ExistsByPlacaAsync(string placa)
+        {
+            if (string.IsNullOrWhiteSpace(placa)) return false;
+            var existing = await _repo.GetByPlacaAsync(placa);
+            return existing != null;
+        }
     }
 }

@@ -48,6 +48,14 @@ message ActualizarEstadoResponse {
   int32 affected = 1;
 }
 
+message ExistsByPlacaRequest {
+  string placa = 1;
+}
+
+message ExistsByPlacaResponse {
+  bool exists = 1;
+}
+
 message VehiculoDto {
   int32 id = 1;
   string nombre = 2;
@@ -65,4 +73,5 @@ service VehiculosService {
   rpc ListarVehiculos (google.protobuf.Empty) returns (stream VehiculoDto);
   rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
   rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
+  rpc ExistsByPlaca (ExistsByPlacaRequest) returns (ExistsByPlacaResponse);
 }
