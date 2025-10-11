@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Vehiculos.Protos";
+
+package vehiculos;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message CrearVehiculoRequest {
+  string nombre = 1;
+  string placa = 2;
+  string marca = 3;
+  string modelo = 4;
+  int32 tipoMaquinariaId = 5;
+  string disponible = 6;
+  double consumoCombustibleKm = 7;
+  double capacidadCombustible = 8;
+}
+
+message CrearVehiculoResponse {
+  int32 id = 1;
+}
+
+message ActualizarVehiculoRequest {
+  int32 id = 1;
+  string nombre = 2;
+  string placa = 3;
+  string marca = 4;
+  string modelo = 5;
+  int32 tipoMaquinariaId = 6;
+  string disponible = 7;
+  double consumoCombustibleKm = 8;
+  double capacidadCombustible = 9;
+  google.protobuf.BoolValue estado = 10;
+}
+
+message ActualizarVehiculoResponse {
+  int32 affected = 1;
+}
+
+message ActualizarEstadoRequest {
+  int32 id = 1;
+  google.protobuf.BoolValue estado = 2;
+}
+
+message ActualizarEstadoResponse {
+  int32 affected = 1;
+}
+
+message ExistsByPlacaRequest {
+  string placa = 1;
+}
+
+message ExistsByPlacaResponse {
+  bool exists = 1;
+}
+
+message SearchRequest {
+  google.protobuf.BoolValue estado = 1;
+  google.protobuf.Int32Value tipoMaquinariaId = 2;
+  string marca = 3;
+  string modelo = 4;
+  google.protobuf.DoubleValue capacidadMin = 5;
+  google.protobuf.DoubleValue capacidadMax = 6;
+  google.protobuf.DoubleValue consumoMin = 7;
+  google.protobuf.DoubleValue consumoMax = 8;
+  string disponible = 9;
+}
+
+message SearchByTermRequest {
+  string term = 1;
+}
+
+message VehiculoDto {
+  int32 id = 1;
+  string nombre = 2;
+  string placa = 3;
+  string marca = 4;
+  string modelo = 5;
+  int32 tipoMaquinariaId = 6;
+  string disponible = 7;
+  double consumoCombustibleKm = 8;
+  double capacidadCombustible = 9;
+}
+
+service VehiculosService {
+  rpc CrearVehiculo (CrearVehiculoRequest) returns (CrearVehiculoResponse);
+  rpc ListarVehiculos (google.protobuf.Empty) returns (stream VehiculoDto);
+  rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
+  rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
+  rpc ExistsByPlaca (ExistsByPlacaRequest) returns (ExistsByPlacaResponse);
+  rpc Search (SearchRequest) returns (stream VehiculoDto);
+  rpc SearchByTerm (SearchByTermRequest) returns (stream VehiculoDto);
+}
