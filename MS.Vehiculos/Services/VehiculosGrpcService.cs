@@ -126,5 +126,76 @@ namespace MS.Vehiculos.Services
                 throw new RpcException(new Status(StatusCode.Internal, "Error interno al verificar placa"));
             }
         }
+
+        public override async Task Search(MS.Vehiculos.Protos.SearchRequest request, IServerStreamWriter<MS.Vehiculos.Protos.VehiculoDto> responseStream, ServerCallContext context)
+        {
+            try
+            {
+                var filter = new AppDtos.VehiculoFilterDto
+                {
+                    Estado = request.Estado != null ? (bool?)request.Estado.Value : null,
+                    TipoMaquinariaId = request.TipoMaquinariaId != null ? (int?)request.TipoMaquinariaId.Value : null,
+                    Marca = string.IsNullOrWhiteSpace(request.Marca) ? null : request.Marca,
+                    Modelo = string.IsNullOrWhiteSpace(request.Modelo) ? null : request.Modelo,
+                    CapacidadMin = request.CapacidadMin != null ? (decimal?)request.CapacidadMin.Value : null,
+                    CapacidadMax = request.CapacidadMax != null ? (decimal?)request.CapacidadMax.Value : null,
+                    ConsumoMin = request.ConsumoMin != null ? (decimal?)request.ConsumoMin.Value : null,
+                    ConsumoMax = request.ConsumoMax != null ? (decimal?)request.ConsumoMax.Value : null,
+                    Disponible = string.IsNullOrWhiteSpace(request.Disponible) ? null : request.Disponible
+                };
+
+                var list = await _vehiculoService.SearchAsync(filter);
+                foreach (var v in list)
+                {
+                    await responseStream.WriteAsync(new MS.Vehiculos.Protos.VehiculoDto
+                    {
+                        Id = v.Id,
+                        Nombre = v.Nombre,
+                        Placa = v.Placa,
+                        Marca = v.Marca,
+                        Modelo = v.Modelo,
+                        TipoMaquinariaId = v.TipoMaquinariaId,
+                        Disponible = v.Disponible,
+                        ConsumoCombustibleKm = (double)v.ConsumoCombustibleKm,
+                        CapacidadCombustible = (double)v.CapacidadCombustible
+                    });
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al buscar vehículos"));
+            }
+        }
+
+        public override async Task SearchByTerm(MS.Vehiculos.Protos.SearchByTermRequest request, IServerStreamWriter<MS.Vehiculos.Protos.VehiculoDto> responseStream, ServerCallContext context)
+        {
+            try
+            {
+                var list = await _vehiculoService.SearchByTermAsync(request.Term);
+                foreach (var v in list)
+                {
+                    await responseStream.WriteAsync(new MS.Vehiculos.Protos.VehiculoDto
+                    {
+                        Id = v.Id,
+                        Nombre = v.Nombre,
+                        Placa = v.Placa,
+                        Marca = v.Marca,
+                        Modelo = v.Modelo,
+                        TipoMaquinariaId = v.TipoMaquinariaId,
+                        Disponible = v.Disponible,
+                        ConsumoCombustibleKm = (double)v.ConsumoCombustibleKm,
+                        CapacidadCombustible = (double)v.CapacidadCombustible
+                    });
+                }
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al buscar por término"));
+            }
+        }
     }
 }

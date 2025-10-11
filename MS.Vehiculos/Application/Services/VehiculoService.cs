@@ -133,5 +133,41 @@ namespace MS.Vehiculos.Application.Services
             var existing = await _repo.GetByPlacaAsync(placa);
             return existing != null;
         }
+
+        public async Task<IEnumerable<VehiculoDto>> SearchAsync(VehiculoFilterDto filter)
+        {
+            var list = await _repo.SearchAsync(filter);
+            return list.Select(v => new VehiculoDto
+            {
+                Id = v.Id,
+                Nombre = v.Nombre,
+                Placa = v.Placa,
+                Marca = v.Marca,
+                Modelo = v.Modelo,
+                TipoMaquinariaId = v.TipoMaquinariaId,
+                Disponible = v.Disponible,
+                ConsumoCombustibleKm = v.ConsumoCombustibleKm,
+                CapacidadCombustible = v.CapacidadCombustible
+            });
+        }
+
+        public async Task<IEnumerable<VehiculoDto>> SearchByTermAsync(string term)
+        {
+            if (string.IsNullOrWhiteSpace(term)) return Enumerable.Empty<VehiculoDto>();
+
+            var list = await _repo.SearchByTermAsync(term);
+            return list.Select(v => new VehiculoDto
+            {
+                Id = v.Id,
+                Nombre = v.Nombre,
+                Placa = v.Placa,
+                Marca = v.Marca,
+                Modelo = v.Modelo,
+                TipoMaquinariaId = v.TipoMaquinariaId,
+                Disponible = v.Disponible,
+                ConsumoCombustibleKm = v.ConsumoCombustibleKm,
+                CapacidadCombustible = v.CapacidadCombustible
+            });
+        }
     }
 }
