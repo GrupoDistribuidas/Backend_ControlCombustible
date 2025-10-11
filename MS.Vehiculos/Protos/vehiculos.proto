@@ -5,6 +5,7 @@ option csharp_namespace = "MS.Vehiculos.Protos";
 package vehiculos;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 message CrearVehiculoRequest {
   string nombre = 1;
@@ -19,6 +20,32 @@ message CrearVehiculoRequest {
 
 message CrearVehiculoResponse {
   int32 id = 1;
+}
+
+message ActualizarVehiculoRequest {
+  int32 id = 1;
+  string nombre = 2;
+  string placa = 3;
+  string marca = 4;
+  string modelo = 5;
+  int32 tipoMaquinariaId = 6;
+  string disponible = 7;
+  double consumoCombustibleKm = 8;
+  double capacidadCombustible = 9;
+  google.protobuf.BoolValue estado = 10;
+}
+
+message ActualizarVehiculoResponse {
+  int32 affected = 1;
+}
+
+message ActualizarEstadoRequest {
+  int32 id = 1;
+  google.protobuf.BoolValue estado = 2;
+}
+
+message ActualizarEstadoResponse {
+  int32 affected = 1;
 }
 
 message VehiculoDto {
@@ -36,4 +63,6 @@ message VehiculoDto {
 service VehiculosService {
   rpc CrearVehiculo (CrearVehiculoRequest) returns (CrearVehiculoResponse);
   rpc ListarVehiculos (google.protobuf.Empty) returns (stream VehiculoDto);
+  rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
+  rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
 }
