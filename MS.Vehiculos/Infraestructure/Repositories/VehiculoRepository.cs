@@ -108,5 +108,49 @@ SELECT LAST_INSERT_ID();";
                 FechaModificacion = Convert.ToDateTime(row["FechaModificacion"])
             };
         }
+
+        public async Task<int> UpdateAsync(Vehiculo vehiculo, bool? estado = null)
+        {
+            // Build SET clause dynamically to avoid overwriting Estado when not provided
+            var setParts = new List<string>
+            {
+                "Nombre = @Nombre",
+                "Placa = @Placa",
+                "Marca = @Marca",
+                "Modelo = @Modelo",
+                "TipoMaquinariaId = @TipoMaquinariaId",
+                "Disponible = @Disponible",
+                "ConsumoCombustibleKm = @ConsumoCombustibleKm",
+                "CapacidadCombustible = @CapacidadCombustible"
+            };
+
+            if (estado.HasValue)
+            {
+                setParts.Add("Estado = @Estado");
+            }
+
+            var setClause = string.Join(", ", setParts) + ", FechaModificacion = CURRENT_TIMESTAMP";
+            var query = $"UPDATE Vehiculos SET {setClause} WHERE Id = @Id;";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@Nombre", vehiculo.Nombre },
+                { "@Placa", vehiculo.Placa },
+                { "@Marca", vehiculo.Marca },
+                { "@Modelo", vehiculo.Modelo },
+                { "@TipoMaquinariaId", vehiculo.TipoMaquinariaId },
+                { "@Disponible", vehiculo.Disponible },
+                { "@ConsumoCombustibleKm", vehiculo.ConsumoCombustibleKm },
+                { "@CapacidadCombustible", vehiculo.CapacidadCombustible },
+                { "@Id", vehiculo.Id }
+            };
+
+            if (estado.HasValue)
+            {
+                parameters.Add("@Estado", estado.Value);
+            }
+
+            return await _db.ExecuteNonQueryAsync(query, parameters);
+        }
     }
 }
