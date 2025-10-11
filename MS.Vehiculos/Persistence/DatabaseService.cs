@@ -7,6 +7,8 @@ namespace MS.Vehiculos.Services
     {
         Task<bool> TestConnectionAsync();
         Task<DataTable> ExecuteQueryAsync(string query);
+        Task<int> ExecuteNonQueryAsync(string query, Dictionary<string, object>? parameters = null);
+        Task<object?> ExecuteScalarAsync(string query, Dictionary<string, object>? parameters = null);
     }
 
     public class DatabaseService : IDatabaseService
@@ -45,7 +47,8 @@ namespace MS.Vehiculos.Services
                 return false;
             }
         }
-                public async Task<DataTable> ExecuteQueryAsync(string query)
+
+        public async Task<DataTable> ExecuteQueryAsync(string query)
         {
             try
             {
@@ -64,6 +67,60 @@ namespace MS.Vehiculos.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al ejecutar query en VehiclesDB: {query}");
+                throw;
+            }
+        }
+
+        public async Task<int> ExecuteNonQueryAsync(string query, Dictionary<string, object>? parameters = null)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new MySqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    foreach (var kv in parameters)
+                    {
+                        command.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
+                    }
+                }
+
+                var affected = await command.ExecuteNonQueryAsync();
+                _logger.LogInformation($"ExecuteNonQuery ejecutado. Query: {query}. Affected: {affected}");
+                return affected;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en ExecuteNonQuery. Query: {query}");
+                throw;
+            }
+        }
+
+        public async Task<object?> ExecuteScalarAsync(string query, Dictionary<string, object>? parameters = null)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new MySqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    foreach (var kv in parameters)
+                    {
+                        command.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
+                    }
+                }
+
+                var result = await command.ExecuteScalarAsync();
+                _logger.LogInformation($"ExecuteScalar ejecutado. Query: {query}");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en ExecuteScalar. Query: {query}");
                 throw;
             }
         }

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Vehiculos.Protos";
+
+package tipos;
+
+import "google/protobuf/empty.proto";
+
+message TipoMaquinariaDto {
+  int32 id = 1;
+  string nombre = 2;
+  string descripcion = 3;
+}
+
+service TiposService {
+  rpc ListarTipos (google.protobuf.Empty) returns (stream TipoMaquinariaDto);
+}
