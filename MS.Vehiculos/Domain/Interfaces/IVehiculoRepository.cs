@@ -9,5 +9,6 @@ namespace MS.Vehiculos.Domain.Interfaces
         Task<Vehiculo?> GetByIdAsync(int id);
         Task<IEnumerable<Vehiculo>> GetAllAsync();
         Task<Vehiculo?> GetByPlacaAsync(string placa);
+        Task<int> UpdateAsync(Vehiculo vehiculo, bool? estado = null);
     }
 }
