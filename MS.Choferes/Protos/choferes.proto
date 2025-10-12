@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Choferes.Protos";
+
+package choferes;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message CrearChoferRequest {
+  string primerNombre = 1;
+  string segundoNombre = 2;
+  string primerApellido = 3;
+  string segundoApellido = 4;
+  string identificacion = 5;
+  string fechaNacimiento = 6; // ISO date
+  bool disponible = 7;
+  int32 usuarioId = 8;
+  int32 tipoMaquinariaId = 9;
+}
+
+message CrearChoferResponse { int32 id = 1; }
+
+message ChoferDto {
+  int32 id = 1;
+  string primerNombre = 2;
+  string segundoNombre = 3;
+  string primerApellido = 4;
+  string segundoApellido = 5;
+  string nombreCompleto = 6;
+  string identificacion = 7;
+  string fechaNacimiento = 8;
+  bool disponible = 9;
+  int32 usuarioId = 10;
+  int32 tipoMaquinariaId = 11;
+}
+
+message ActualizarChoferRequest {
+  int32 id = 1;
+  string primerNombre = 2;
+  string segundoNombre = 3;
+  string primerApellido = 4;
+  string segundoApellido = 5;
+  string identificacion = 6;
+  string fechaNacimiento = 7;
+  bool disponible = 8;
+  int32 usuarioId = 9;
+  int32 tipoMaquinariaId = 10;
+  google.protobuf.BoolValue estado = 11;
+}
+
+message ActualizarChoferResponse { int32 affected = 1; }
+
+message SearchChoferRequest {
+  google.protobuf.BoolValue estado = 1;
+  google.protobuf.Int32Value tipoMaquinariaId = 2;
+  google.protobuf.BoolValue disponible = 3;
+  string fechaNacimientoDesde = 4;
+  string fechaNacimientoHasta = 5;
+}
+
+message SearchByTermRequest { string term = 1; }
+
+message ActualizarEstadoRequest { int32 id = 1; google.protobuf.BoolValue estado = 2; }
+message ActualizarEstadoResponse { int32 affected = 1; }
+
+message ActualizarDisponibilidadRequest { int32 id = 1; google.protobuf.BoolValue disponible = 2; }
+message ActualizarDisponibilidadResponse { int32 affected = 1; }
+
+service ChoferesService {
+  rpc CrearChofer (CrearChoferRequest) returns (CrearChoferResponse);
+  rpc ListarChoferes (google.protobuf.Empty) returns (stream ChoferDto);
+  rpc ActualizarChofer (ActualizarChoferRequest) returns (ActualizarChoferResponse);
+  rpc ActualizarEstadoChofer (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
+  rpc ActualizarDisponibilidadChofer (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);
+  rpc Search (SearchChoferRequest) returns (stream ChoferDto);
+  rpc SearchByTerm (SearchByTermRequest) returns (stream ChoferDto);
+}
