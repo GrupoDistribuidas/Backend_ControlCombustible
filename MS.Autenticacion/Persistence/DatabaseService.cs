@@ -94,5 +94,30 @@ namespace MS.Autenticacion.Persistence
                 throw;
             }
         }
+
+        public async Task<object?> ExecuteScalarAsync(string query, MySqlParameter[]? parameters = null)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new MySqlCommand(query, connection);
+                
+                if (parameters != null)
+                {
+                    command.Parameters.AddRange(parameters);
+                }
+
+                var result = await command.ExecuteScalarAsync();
+                _logger.LogInformation("Query escalar ejecutado exitosamente: {Query}", query);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al ejecutar query escalar: {Query}", query);
+                throw;
+            }
+        }
     }
 }

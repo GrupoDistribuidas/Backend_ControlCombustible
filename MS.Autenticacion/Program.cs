@@ -95,8 +95,9 @@ namespace MS.Autenticacion
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // Configurar gRPC - Reemplazar GreeterService con GrpcAuthService
+            // Configurar servicios gRPC
             app.MapGrpcService<GrpcAuthService>();
+            app.MapGrpcService<GrpcUserService>();
 
             // Configurar controladores HTTP
             app.MapControllers();

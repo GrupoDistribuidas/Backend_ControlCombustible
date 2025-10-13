@@ -19,6 +19,33 @@ service AuthService {
   rpc GenerateTemporaryPassword (GenerateTemporaryPasswordRequest) returns (GenerateTemporaryPasswordResponse);
 }
 
+// Servicio de gestión de usuarios
+service UserService {
+  // Crea un nuevo usuario
+  rpc CrearUsuario (CrearUsuarioRequest) returns (CrearUsuarioResponse);
+  
+  // Obtiene todos los usuarios
+  rpc ListarUsuarios (ListarUsuariosRequest) returns (stream UsuarioDto);
+  
+  // Obtiene un usuario por ID
+  rpc ObtenerUsuarioPorId (ObtenerUsuarioPorIdRequest) returns (ObtenerUsuarioPorIdResponse);
+  
+  // Actualiza un usuario existente
+  rpc ActualizarUsuario (ActualizarUsuarioRequest) returns (ActualizarUsuarioResponse);
+  
+  // Actualiza el estado de un usuario
+  rpc ActualizarEstadoUsuario (ActualizarEstadoUsuarioRequest) returns (ActualizarEstadoUsuarioResponse);
+  
+  // Verifica si un usuario existe por ID
+  rpc ExisteUsuario (ExisteUsuarioRequest) returns (ExisteUsuarioResponse);
+  
+  // Verifica si un username ya está registrado
+  rpc ExisteUsername (ExisteUsernameRequest) returns (ExisteUsernameResponse);
+  
+  // Verifica si un email ya está registrado
+  rpc ExisteEmail (ExisteEmailRequest) returns (ExisteEmailResponse);
+}
+
 // Mensaje de solicitud de login
 message LoginRequest {
   string username = 1;  // Nombre de usuario
@@ -81,3 +108,102 @@ message GenerateTemporaryPasswordResponse {
   string temporary_password = 2;
   string message = 3;
 }
+
+// ========== Mensajes para UserService ==========
+
+// Crear usuario
+message CrearUsuarioRequest {
+  string email = 1;
+  string nombre_usuario = 2;
+  string password = 3;
+  int32 rol_id = 4;
+}
+
+message CrearUsuarioResponse {
+  bool success = 1;
+  string message = 2;
+  int32 usuario_id = 3;
+}
+
+// Listar usuarios
+message ListarUsuariosRequest {
+  // Vacío - retorna todos los usuarios
+}
+
+message UsuarioDto {
+  int32 id = 1;
+  string email = 2;
+  string nombre_usuario = 3;
+  int32 rol_id = 4;
+  string rol_nombre = 5;
+  int32 estado = 6;
+  string fecha_creacion = 7;
+  string fecha_modificacion = 8;
+  string ultimo_acceso = 9;
+}
+
+// Obtener usuario por ID
+message ObtenerUsuarioPorIdRequest {
+  int32 id = 1;
+}
+
+message ObtenerUsuarioPorIdResponse {
+  bool success = 1;
+  string message = 2;
+  UsuarioDto usuario = 3;
+}
+
+// Actualizar usuario
+message ActualizarUsuarioRequest {
+  int32 id = 1;
+  string email = 2;
+  string nombre_usuario = 3;
+  int32 rol_id = 4;
+  optional string password = 5;  // Opcional - solo si se quiere cambiar
+}
+
+message ActualizarUsuarioResponse {
+  bool success = 1;
+  string message = 2;
+  int32 affected_rows = 3;
+}
+
+// Actualizar estado
+message ActualizarEstadoUsuarioRequest {
+  int32 id = 1;
+  int32 estado = 2;  // 1=Activo, 0=Inactivo
+}
+
+message ActualizarEstadoUsuarioResponse {
+  bool success = 1;
+  string message = 2;
+  int32 affected_rows = 3;
+}
+
+// Existe usuario
+message ExisteUsuarioRequest {
+  int32 id = 1;
+}
+
+message ExisteUsuarioResponse {
+  bool existe = 1;
+}
+
+// Existe username
+message ExisteUsernameRequest {
+  string username = 1;
+}
+
+message ExisteUsernameResponse {
+  bool existe = 1;
+}
+
+// Existe email
+message ExisteEmailRequest {
+  string email = 1;
+}
+
+message ExisteEmailResponse {
+  bool existe = 1;
+}
+

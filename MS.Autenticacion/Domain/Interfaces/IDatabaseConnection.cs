@@ -8,5 +8,6 @@ namespace MS.Autenticacion.Domain.Interfaces
         Task<bool> TestConnectionAsync();
         Task<DataTable> ExecuteQueryAsync(string query, MySqlParameter[]? parameters = null);
         Task<int> ExecuteNonQueryAsync(string query, MySqlParameter[]? parameters = null);
+        Task<object?> ExecuteScalarAsync(string query, MySqlParameter[]? parameters = null);
     }
 }
