@@ -1,6 +1,7 @@
 using MS.Choferes.Application.DTOs;
 using MS.Choferes.Domain.Entities;
 using MS.Choferes.Domain.Interfaces;
+using Grpc.Core;
 using System.Linq;
 
 namespace MS.Choferes.Application.Services
@@ -9,11 +10,16 @@ namespace MS.Choferes.Application.Services
     {
         private readonly IChoferRepository _repo;
         private readonly ITipoMaquinariaRepository _tipoRepo;
+        private readonly MS.Autenticacion.Grpc.UserService.UserServiceClient _userClient;
 
-        public ChoferService(IChoferRepository repo, ITipoMaquinariaRepository tipoRepo)
+        public ChoferService(
+            IChoferRepository repo, 
+            ITipoMaquinariaRepository tipoRepo,
+            MS.Autenticacion.Grpc.UserService.UserServiceClient userClient)
         {
             _repo = repo;
             _tipoRepo = tipoRepo;
+            _userClient = userClient;
         }
 
         public async Task<int> CrearChoferAsync(CrearChoferDto dto)
@@ -23,12 +29,40 @@ namespace MS.Choferes.Application.Services
             if (string.IsNullOrWhiteSpace(dto.PrimerApellido)) errors.Add("PrimerApellido es obligatorio");
             if (string.IsNullOrWhiteSpace(dto.Identificacion)) errors.Add("Identificacion es obligatoria");
             if (dto.TipoMaquinariaId <= 0) errors.Add("TipoMaquinariaId inválido");
+            // UsuarioId es opcional - se puede asignar después (0 significa sin usuario)
+            
             // Validar edad >= 18
             var edad = DateTime.Today.Year - dto.FechaNacimiento.Year;
             if (dto.FechaNacimiento > DateTime.Today.AddYears(-edad)) edad--;
             if (edad < 18) errors.Add("El chofer debe ser mayor o igual a 18 años");
 
             if (errors.Any()) throw new ArgumentException(string.Join("; ", errors));
+
+            // ✅ Validar que el usuario existe en MS.Autenticacion (solo si se proporciona un usuario)
+            if (dto.UsuarioId > 0)
+            {
+                try
+                {
+                    var usuarioExisteRequest = new MS.Autenticacion.Grpc.ExisteUsuarioRequest { Id = dto.UsuarioId };
+                    var usuarioExiste = await _userClient.ExisteUsuarioAsync(usuarioExisteRequest);
+                    
+                    if (!usuarioExiste.Existe)
+                    {
+                        throw new ArgumentException($"Usuario con ID {dto.UsuarioId} no existe");
+                    }
+                }
+                catch (RpcException ex)
+                {
+                    throw new Exception($"Error al validar usuario en MS.Autenticacion: {ex.Status.Detail}", ex);
+                }
+
+                // ✅ Verificar que el usuario no esté asignado a otro chofer
+                var choferConUsuario = await _repo.GetByUsuarioIdAsync(dto.UsuarioId);
+                if (choferConUsuario != null)
+                {
+                    throw new ArgumentException($"El usuario con ID {dto.UsuarioId} ya está asignado al chofer '{choferConUsuario.NombreCompleto}'");
+                }
+            }
 
             // Verificar tipo
             var tipo = await _tipoRepo.GetByIdAsync(dto.TipoMaquinariaId);
@@ -98,6 +132,32 @@ namespace MS.Choferes.Application.Services
             var tipo = await _tipoRepo.GetByIdAsync(dto.TipoMaquinariaId);
             if (tipo == null) throw new ArgumentException("TipoMaquinaria no existe");
 
+            // ✅ Validar usuario si se proporciona (solo si es > 0)
+            if (dto.UsuarioId > 0)
+            {
+                try
+                {
+                    var usuarioExisteRequest = new MS.Autenticacion.Grpc.ExisteUsuarioRequest { Id = dto.UsuarioId };
+                    var usuarioExiste = await _userClient.ExisteUsuarioAsync(usuarioExisteRequest);
+                    
+                    if (!usuarioExiste.Existe)
+                    {
+                        throw new ArgumentException($"Usuario con ID {dto.UsuarioId} no existe");
+                    }
+                }
+                catch (RpcException ex)
+                {
+                    throw new Exception($"Error al validar usuario en MS.Autenticacion: {ex.Status.Detail}", ex);
+                }
+
+                // ✅ Verificar que el usuario no esté asignado a otro chofer (excepto al chofer actual)
+                var choferConUsuario = await _repo.GetByUsuarioIdAsync(dto.UsuarioId);
+                if (choferConUsuario != null && choferConUsuario.Id != dto.Id)
+                {
+                    throw new ArgumentException($"El usuario con ID {dto.UsuarioId} ya está asignado al chofer '{choferConUsuario.NombreCompleto}'");
+                }
+            }
+
             var chofer = new Chofer
             {
                 Id = dto.Id,
@@ -133,6 +193,39 @@ namespace MS.Choferes.Application.Services
                 UsuarioId = c.UsuarioId,
                 TipoMaquinariaId = c.TipoMaquinariaId
             });
+        }
+
+        public async Task<int> AsignarUsuarioAsync(int choferId, int usuarioId)
+        {
+            // Validar que el chofer existe
+            var chofer = await _repo.GetByIdAsync(choferId);
+            if (chofer == null) throw new ArgumentException($"Chofer con ID {choferId} no encontrado");
+
+            // Validar que el usuario existe en MS.Autenticacion
+            try
+            {
+                var usuarioExisteRequest = new MS.Autenticacion.Grpc.ExisteUsuarioRequest { Id = usuarioId };
+                var usuarioExiste = await _userClient.ExisteUsuarioAsync(usuarioExisteRequest);
+                
+                if (!usuarioExiste.Existe)
+                {
+                    throw new ArgumentException($"Usuario con ID {usuarioId} no existe");
+                }
+            }
+            catch (RpcException ex)
+            {
+                throw new Exception($"Error al validar usuario en MS.Autenticacion: {ex.Status.Detail}", ex);
+            }
+
+            // Verificar que el usuario no esté asignado a otro chofer
+            var choferConUsuario = await _repo.GetByUsuarioIdAsync(usuarioId);
+            if (choferConUsuario != null && choferConUsuario.Id != choferId)
+            {
+                throw new ArgumentException($"El usuario con ID {usuarioId} ya está asignado al chofer '{choferConUsuario.NombreCompleto}'");
+            }
+
+            // Actualizar el usuario del chofer
+            return await _repo.UpdateUsuarioAsync(choferId, usuarioId);
         }
 
         public async Task<IEnumerable<ChoferDto>> SearchByTermAsync(string term)

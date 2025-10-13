@@ -115,6 +115,30 @@ SELECT LAST_INSERT_ID();";
             };
         }
 
+        public async Task<Chofer?> GetByUsuarioIdAsync(int usuarioId)
+        {
+            var dt = await _db.ExecuteQueryAsync($"SELECT Id, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, NombreCompleto, Identificacion, FechaNacimiento, Disponible, UsuarioId, TipoMaquinariaId, Estado, FechaCreacion, FechaModificacion FROM Choferes WHERE UsuarioId = {usuarioId} LIMIT 1;");
+            if (dt.Rows.Count == 0) return null;
+            var row = dt.Rows[0];
+            return new Chofer
+            {
+                Id = Convert.ToInt32(row["Id"]),
+                PrimerNombre = row["PrimerNombre"].ToString() ?? string.Empty,
+                SegundoNombre = row["SegundoNombre"].ToString(),
+                PrimerApellido = row["PrimerApellido"].ToString() ?? string.Empty,
+                SegundoApellido = row["SegundoApellido"].ToString(),
+                NombreCompleto = row["NombreCompleto"].ToString() ?? string.Empty,
+                Identificacion = row["Identificacion"].ToString() ?? string.Empty,
+                FechaNacimiento = Convert.ToDateTime(row["FechaNacimiento"]),
+                Disponible = Convert.ToBoolean(row["Disponible"]),
+                UsuarioId = Convert.ToInt32(row["UsuarioId"]),
+                TipoMaquinariaId = Convert.ToInt32(row["TipoMaquinariaId"]),
+                Estado = Convert.ToBoolean(row["Estado"]),
+                FechaCreacion = Convert.ToDateTime(row["FechaCreacion"]),
+                FechaModificacion = Convert.ToDateTime(row["FechaModificacion"])
+            };
+        }
+
         public async Task<int> UpdateAsync(Chofer chofer, bool? estado = null)
         {
             var setParts = new List<string>
@@ -174,6 +198,17 @@ SELECT LAST_INSERT_ID();";
             {
                 { "@Disponible", disponible },
                 { "@Id", id }
+            };
+            return await _db.ExecuteNonQueryAsync(query, parameters);
+        }
+
+        public async Task<int> UpdateUsuarioAsync(int choferId, int usuarioId)
+        {
+            var query = "UPDATE Choferes SET UsuarioId = @UsuarioId, FechaModificacion = CURRENT_TIMESTAMP WHERE Id = @ChoferId;";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@UsuarioId", usuarioId },
+                { "@ChoferId", choferId }
             };
             return await _db.ExecuteNonQueryAsync(query, parameters);
         }

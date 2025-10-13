@@ -205,5 +205,25 @@ namespace MS.Choferes.Services
                 throw new RpcException(new Status(StatusCode.Internal, "Error interno al actualizar disponibilidad"));
             }
         }
+
+        public override async Task<AsignarUsuarioResponse> AsignarUsuario(AsignarUsuarioRequest request, ServerCallContext context)
+        {
+            try
+            {
+                if (request.ChoferId <= 0) throw new ArgumentException("ChoferId inválido");
+                if (request.UsuarioId <= 0) throw new ArgumentException("UsuarioId inválido");
+                
+                var affected = await _choferService.AsignarUsuarioAsync(request.ChoferId, request.UsuarioId);
+                return new AsignarUsuarioResponse { Affected = affected };
+            }
+            catch (ArgumentException ex)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, $"Error interno al asignar usuario: {ex.Message}"));
+            }
+        }
     }
 }

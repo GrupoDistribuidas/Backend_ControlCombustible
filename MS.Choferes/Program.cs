@@ -37,6 +37,14 @@ namespace MS.Choferes
             
             // Registrar el servicio de base de datos
             builder.Services.AddScoped<IDatabaseService, DatabaseService>();
+            
+            // Configurar cliente gRPC para MS.Autenticacion (validar usuarios)
+            var authServiceUrl = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL") ?? "https://localhost:5235";
+            builder.Services.AddGrpcClient<MS.Autenticacion.Grpc.UserService.UserServiceClient>(options =>
+            {
+                options.Address = new Uri(authServiceUrl);
+            });
+            
             // Registrar repositorios y servicios de aplicación
             builder.Services.AddScoped<MS.Choferes.Domain.Interfaces.ITipoMaquinariaRepository, MS.Choferes.Infraestructure.Repositories.TipoMaquinariaRepository>();
             builder.Services.AddScoped<MS.Choferes.Domain.Interfaces.IChoferRepository, MS.Choferes.Infraestructure.Repositories.ChoferRepository>();
@@ -45,7 +53,8 @@ namespace MS.Choferes
             {
                 var repo = sp.GetRequiredService<MS.Choferes.Domain.Interfaces.IChoferRepository>();
                 var tipoRepo = sp.GetRequiredService<MS.Choferes.Domain.Interfaces.ITipoMaquinariaRepository>();
-                return new MS.Choferes.Application.Services.ChoferService(repo, tipoRepo);
+                var userClient = sp.GetRequiredService<MS.Autenticacion.Grpc.UserService.UserServiceClient>();
+                return new MS.Choferes.Application.Services.ChoferService(repo, tipoRepo, userClient);
             });
             
             // Agregar Swagger para documentación de la API
