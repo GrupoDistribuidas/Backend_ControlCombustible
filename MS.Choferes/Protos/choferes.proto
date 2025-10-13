@@ -67,12 +67,16 @@ message ActualizarEstadoResponse { int32 affected = 1; }
 message ActualizarDisponibilidadRequest { int32 id = 1; google.protobuf.BoolValue disponible = 2; }
 message ActualizarDisponibilidadResponse { int32 affected = 1; }
 
+message AsignarUsuarioRequest { int32 choferId = 1; int32 usuarioId = 2; }
+message AsignarUsuarioResponse { int32 affected = 1; }
+
 service ChoferesService {
   rpc CrearChofer (CrearChoferRequest) returns (CrearChoferResponse);
   rpc ListarChoferes (google.protobuf.Empty) returns (stream ChoferDto);
   rpc ActualizarChofer (ActualizarChoferRequest) returns (ActualizarChoferResponse);
   rpc ActualizarEstadoChofer (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
   rpc ActualizarDisponibilidadChofer (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);
+  rpc AsignarUsuario (AsignarUsuarioRequest) returns (AsignarUsuarioResponse);
   rpc Search (SearchChoferRequest) returns (stream ChoferDto);
   rpc SearchByTerm (SearchByTermRequest) returns (stream ChoferDto);
 }
