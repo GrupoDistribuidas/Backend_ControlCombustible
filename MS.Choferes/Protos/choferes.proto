@@ -61,6 +61,8 @@ message SearchChoferRequest {
 
 message SearchByTermRequest { string term = 1; }
 
+message GetByIdRequest { int32 id = 1; }
+
 message ActualizarEstadoRequest { int32 id = 1; google.protobuf.BoolValue estado = 2; }
 message ActualizarEstadoResponse { int32 affected = 1; }
 
@@ -73,6 +75,7 @@ message AsignarUsuarioResponse { int32 affected = 1; }
 service ChoferesService {
   rpc CrearChofer (CrearChoferRequest) returns (CrearChoferResponse);
   rpc ListarChoferes (google.protobuf.Empty) returns (stream ChoferDto);
+  rpc GetById (GetByIdRequest) returns (ChoferDto);
   rpc ActualizarChofer (ActualizarChoferRequest) returns (ActualizarChoferResponse);
   rpc ActualizarEstadoChofer (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
   rpc ActualizarDisponibilidadChofer (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);

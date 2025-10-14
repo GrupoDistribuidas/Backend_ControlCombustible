@@ -67,6 +67,41 @@ namespace MS.Choferes.Services
             }
         }
 
+        public override async Task<MS.Choferes.Protos.ChoferDto> GetById(GetByIdRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var chofer = await _choferService.GetAllAsync();
+                var c = chofer.FirstOrDefault(x => x.Id == request.Id);
+                if (c == null)
+                {
+                    throw new RpcException(new Status(StatusCode.NotFound, "Chofer no encontrado"));
+                }
+                return new MS.Choferes.Protos.ChoferDto
+                {
+                    Id = c.Id,
+                    PrimerNombre = c.PrimerNombre,
+                    SegundoNombre = c.SegundoNombre ?? string.Empty,
+                    PrimerApellido = c.PrimerApellido,
+                    SegundoApellido = c.SegundoApellido ?? string.Empty,
+                    NombreCompleto = c.NombreCompleto,
+                    Identificacion = c.Identificacion,
+                    FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
+                    Disponible = c.Disponible,
+                    UsuarioId = c.UsuarioId,
+                    TipoMaquinariaId = c.TipoMaquinariaId
+                };
+            }
+            catch (RpcException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al buscar chofer"));
+            }
+        }
+
         public override async Task<ActualizarChoferResponse> ActualizarChofer(ActualizarChoferRequest request, ServerCallContext context)
         {
             var dto = new AppDtos.ActualizarChoferDto
