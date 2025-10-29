@@ -74,6 +74,7 @@ message AsignarUsuarioResponse { int32 affected = 1; }
 service ChoferesService {
   rpc CrearChofer (CrearChoferRequest) returns (CrearChoferResponse);
   rpc ListarChoferes (google.protobuf.Empty) returns (stream ChoferDto);
+  rpc ListarTodosChoferes (google.protobuf.Empty) returns (stream ChoferDto);
   rpc ActualizarChofer (ActualizarChoferRequest) returns (ActualizarChoferResponse);
   rpc ActualizarEstadoChofer (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
   rpc ActualizarDisponibilidadChofer (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);

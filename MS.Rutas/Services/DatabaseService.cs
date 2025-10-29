@@ -7,6 +7,8 @@ namespace MS.Rutas.Services
     {
         Task<bool> TestConnectionAsync();
         Task<DataTable> ExecuteQueryAsync(string query);
+        Task<object?> ExecuteScalarAsync(string query, Dictionary<string, object>? parameters = null);
+        Task<int> ExecuteNonQueryAsync(string query, Dictionary<string, object>? parameters = null);
     }
 
     public class DatabaseService : IDatabaseService
@@ -65,6 +67,60 @@ namespace MS.Rutas.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al ejecutar query en RoutesDB: {query}");
+                throw;
+            }
+        }
+
+        public async Task<object?> ExecuteScalarAsync(string query, Dictionary<string, object>? parameters = null)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new MySqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    foreach (var kv in parameters)
+                    {
+                        command.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
+                    }
+                }
+
+                var result = await command.ExecuteScalarAsync();
+                _logger.LogInformation($"ExecuteScalar ejecutado en RoutesDB: {query}");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en ExecuteScalar en RoutesDB: {query}");
+                throw;
+            }
+        }
+
+        public async Task<int> ExecuteNonQueryAsync(string query, Dictionary<string, object>? parameters = null)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new MySqlCommand(query, connection);
+                if (parameters != null)
+                {
+                    foreach (var kv in parameters)
+                    {
+                        command.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
+                    }
+                }
+
+                var affected = await command.ExecuteNonQueryAsync();
+                _logger.LogInformation($"ExecuteNonQuery ejecutado en RoutesDB: {query}");
+                return affected;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en ExecuteNonQuery en RoutesDB: {query}");
                 throw;
             }
         }

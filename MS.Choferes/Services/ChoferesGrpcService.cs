@@ -68,6 +68,29 @@ namespace MS.Choferes.Services
             }
         }
 
+        public override async Task ListarTodosChoferes(Empty request, IServerStreamWriter<MS.Choferes.Protos.ChoferDto> responseStream, ServerCallContext context)
+        {
+            var list = await _choferService.GetAllIncludingInactiveAsync();
+            foreach (var c in list)
+            {
+                await responseStream.WriteAsync(new MS.Choferes.Protos.ChoferDto
+                {
+                    Id = c.Id,
+                    PrimerNombre = c.PrimerNombre,
+                    SegundoNombre = c.SegundoNombre ?? string.Empty,
+                    PrimerApellido = c.PrimerApellido,
+                    SegundoApellido = c.SegundoApellido ?? string.Empty,
+                    NombreCompleto = c.NombreCompleto,
+                    Identificacion = c.Identificacion,
+                    FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
+                    Disponible = c.Disponible,
+                    UsuarioId = c.UsuarioId,
+                    TipoMaquinariaId = c.TipoMaquinariaId,
+                    Estado = c.Estado
+                });
+            }
+        }
+
         public override async Task<MS.Choferes.Protos.ChoferDto> GetById(GetByIdRequest request, ServerCallContext context)
         {
             try

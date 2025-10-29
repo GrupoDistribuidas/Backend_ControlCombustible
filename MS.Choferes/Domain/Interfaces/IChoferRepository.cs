@@ -8,6 +8,7 @@ namespace MS.Choferes.Domain.Interfaces
         Task<int> CreateAsync(Chofer chofer);
         Task<Chofer?> GetByIdAsync(int id);
         Task<IEnumerable<Chofer>> GetAllAsync();
+        Task<IEnumerable<Chofer>> GetAllIncludingInactiveAsync();
         Task<Chofer?> GetByIdentificacionAsync(string identificacion);
         Task<Chofer?> GetByUsuarioIdAsync(int usuarioId);
         Task<int> UpdateAsync(Chofer chofer, bool? estado = null);

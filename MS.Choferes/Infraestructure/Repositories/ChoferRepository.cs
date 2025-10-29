@@ -67,6 +67,33 @@ SELECT LAST_INSERT_ID();";
             return list;
         }
 
+        public async Task<IEnumerable<Chofer>> GetAllIncludingInactiveAsync()
+        {
+            var dt = await _db.ExecuteQueryAsync("SELECT Id, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, NombreCompleto, Identificacion, FechaNacimiento, Disponible, UsuarioId, TipoMaquinariaId, Estado, FechaCreacion, FechaModificacion FROM Choferes;");
+            var list = new List<Chofer>();
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new Chofer
+                {
+                    Id = Convert.ToInt32(row["Id"]),
+                    PrimerNombre = row["PrimerNombre"].ToString() ?? string.Empty,
+                    SegundoNombre = row["SegundoNombre"].ToString(),
+                    PrimerApellido = row["PrimerApellido"].ToString() ?? string.Empty,
+                    SegundoApellido = row["SegundoApellido"].ToString(),
+                    NombreCompleto = row["NombreCompleto"].ToString() ?? string.Empty,
+                    Identificacion = row["Identificacion"].ToString() ?? string.Empty,
+                    FechaNacimiento = Convert.ToDateTime(row["FechaNacimiento"]),
+                    Disponible = Convert.ToBoolean(row["Disponible"]),
+                    UsuarioId = Convert.ToInt32(row["UsuarioId"]),
+                    TipoMaquinariaId = Convert.ToInt32(row["TipoMaquinariaId"]),
+                    Estado = Convert.ToBoolean(row["Estado"]),
+                    FechaCreacion = Convert.ToDateTime(row["FechaCreacion"]),
+                    FechaModificacion = Convert.ToDateTime(row["FechaModificacion"])
+                });
+            }
+            return list;
+        }
+
         public async Task<Chofer?> GetByIdAsync(int id)
         {
             var dt = await _db.ExecuteQueryAsync($"SELECT Id, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, NombreCompleto, Identificacion, FechaNacimiento, Disponible, UsuarioId, TipoMaquinariaId, Estado, FechaCreacion, FechaModificacion FROM Choferes WHERE Id = {id} LIMIT 1;");

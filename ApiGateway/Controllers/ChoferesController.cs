@@ -144,6 +144,54 @@ namespace ApiGateway.Controllers
         }
 
         /// <summary>
+        /// Obtiene todos los choferes (incluyendo inactivos)
+        /// </summary>
+        [HttpGet("all")]
+        public async Task<IActionResult> ListarTodosChoferes()
+        {
+            try
+            {
+                using var channel = GrpcChannel.ForAddress(_choferesServiceUrl);
+                var client = new ChoferesService.ChoferesServiceClient(channel);
+
+                var choferes = new List<object>();
+
+                using var call = client.ListarTodosChoferes(new Empty());
+
+                await foreach (var chofer in call.ResponseStream.ReadAllAsync())
+                {
+                    choferes.Add(new
+                    {
+                        Id = chofer.Id,
+                        PrimerNombre = chofer.PrimerNombre,
+                        SegundoNombre = chofer.SegundoNombre,
+                        PrimerApellido = chofer.PrimerApellido,
+                        SegundoApellido = chofer.SegundoApellido,
+                        NombreCompleto = chofer.NombreCompleto,
+                        Identificacion = chofer.Identificacion,
+                        FechaNacimiento = chofer.FechaNacimiento,
+                        Disponible = chofer.Disponible,
+                        UsuarioId = chofer.UsuarioId,
+                        TipoMaquinariaId = chofer.TipoMaquinariaId,
+                        Estado = chofer.Estado
+                    });
+                }
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Todos los choferes listados exitosamente",
+                    Data = choferes
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al listar todos los choferes");
+                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+            }
+        }
+
+        /// <summary>
         /// Actualiza los datos de un chofer existente
         /// </summary>
         /// <param name="id">ID único del chofer a actualizar</param>
