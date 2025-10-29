@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Rutas.Protos";
+
+package puntos;
+
+import "google/protobuf/empty.proto";
+
+message CrearPuntoRequest {
+  string nombre = 1;
+  string direccion = 2;
+  string provincia = 3;
+  string tipoPunto = 4;
+}
+
+message CrearPuntoResponse { 
+  int32 id = 1; 
+}
+
+message PuntoDto {
+  int32 id = 1;
+  string nombre = 2;
+  string direccion = 3;
+  string provincia = 4;
+  string tipoPunto = 5;
+}
+
+message ActualizarPuntoRequest {
+  int32 id = 1;
+  string nombre = 2;
+  string direccion = 3;
+  string provincia = 4;
+  string tipoPunto = 5;
+}
+
+message ActualizarPuntoResponse { 
+  int32 affected = 1; 
+}
+
+message GetPuntoByIdRequest { 
+  int32 id = 1; 
+}
+
+message SearchPuntoByTermRequest { 
+  string term = 1; 
+}
+
+service PuntosService {
+  rpc CrearPunto (CrearPuntoRequest) returns (CrearPuntoResponse);
+  rpc ListarPuntos (google.protobuf.Empty) returns (stream PuntoDto);
+  rpc GetById (GetPuntoByIdRequest) returns (PuntoDto);
+  rpc ActualizarPunto (ActualizarPuntoRequest) returns (ActualizarPuntoResponse);
+  rpc SearchByTerm (SearchPuntoByTermRequest) returns (stream PuntoDto);
+}
