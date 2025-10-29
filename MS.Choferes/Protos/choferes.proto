@@ -33,6 +33,7 @@ message ChoferDto {
   bool disponible = 9;
   int32 usuarioId = 10;
   int32 tipoMaquinariaId = 11;
+  bool estado = 12;
 }
 
 message ActualizarChoferRequest {

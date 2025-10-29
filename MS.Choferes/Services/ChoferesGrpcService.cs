@@ -62,7 +62,8 @@ namespace MS.Choferes.Services
                     FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
                     Disponible = c.Disponible,
                     UsuarioId = c.UsuarioId,
-                    TipoMaquinariaId = c.TipoMaquinariaId
+                    TipoMaquinariaId = c.TipoMaquinariaId,
+                    Estado = c.Estado
                 });
             }
         }
@@ -89,7 +90,8 @@ namespace MS.Choferes.Services
                     FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
                     Disponible = c.Disponible,
                     UsuarioId = c.UsuarioId,
-                    TipoMaquinariaId = c.TipoMaquinariaId
+                    TipoMaquinariaId = c.TipoMaquinariaId,
+                    Estado = c.Estado
                 };
             }
             catch (RpcException)
@@ -162,7 +164,8 @@ namespace MS.Choferes.Services
                         FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
                         Disponible = c.Disponible,
                         UsuarioId = c.UsuarioId,
-                        TipoMaquinariaId = c.TipoMaquinariaId
+                        TipoMaquinariaId = c.TipoMaquinariaId,
+                        Estado = c.Estado
                     });
                 }
             }
@@ -195,7 +198,8 @@ namespace MS.Choferes.Services
                         FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
                         Disponible = c.Disponible,
                         UsuarioId = c.UsuarioId,
-                        TipoMaquinariaId = c.TipoMaquinariaId
+                        TipoMaquinariaId = c.TipoMaquinariaId,
+                        Estado = c.Estado
                     });
                 }
             }
@@ -247,7 +251,7 @@ namespace MS.Choferes.Services
             {
                 if (request.ChoferId <= 0) throw new ArgumentException("ChoferId inválido");
                 if (request.UsuarioId <= 0) throw new ArgumentException("UsuarioId inválido");
-                
+
                 var affected = await _choferService.AsignarUsuarioAsync(request.ChoferId, request.UsuarioId);
                 return new AsignarUsuarioResponse { Affected = affected };
             }
