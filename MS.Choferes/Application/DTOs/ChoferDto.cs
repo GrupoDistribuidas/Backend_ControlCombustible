@@ -15,5 +15,6 @@ namespace MS.Choferes.Application.DTOs
         public bool Disponible { get; set; }
         public int UsuarioId { get; set; }
         public int TipoMaquinariaId { get; set; }
+        public bool Estado { get; set; } = true;
     }
 }

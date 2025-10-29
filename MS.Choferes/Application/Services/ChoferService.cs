@@ -108,6 +108,26 @@ namespace MS.Choferes.Application.Services
             });
         }
 
+        public async Task<IEnumerable<ChoferDto>> GetAllIncludingInactiveAsync()
+        {
+            var list = await _repo.GetAllIncludingInactiveAsync();
+            return list.Select(c => new ChoferDto
+            {
+                Id = c.Id,
+                PrimerNombre = c.PrimerNombre,
+                SegundoNombre = c.SegundoNombre,
+                PrimerApellido = c.PrimerApellido,
+                SegundoApellido = c.SegundoApellido,
+                NombreCompleto = c.NombreCompleto,
+                Identificacion = c.Identificacion,
+                FechaNacimiento = c.FechaNacimiento,
+                Disponible = c.Disponible,
+                UsuarioId = c.UsuarioId,
+                TipoMaquinariaId = c.TipoMaquinariaId,
+                Estado = c.Estado
+            });
+        }
+
         public async Task<int> ActualizarChoferAsync(ActualizarChoferDto dto)
         {
             var errors = new List<string>();
