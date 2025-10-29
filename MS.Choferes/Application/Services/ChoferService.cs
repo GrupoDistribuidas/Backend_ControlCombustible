@@ -13,7 +13,7 @@ namespace MS.Choferes.Application.Services
         private readonly MS.Autenticacion.Grpc.UserService.UserServiceClient _userClient;
 
         public ChoferService(
-            IChoferRepository repo, 
+            IChoferRepository repo,
             ITipoMaquinariaRepository tipoRepo,
             MS.Autenticacion.Grpc.UserService.UserServiceClient userClient)
         {
@@ -30,7 +30,7 @@ namespace MS.Choferes.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Identificacion)) errors.Add("Identificacion es obligatoria");
             if (dto.TipoMaquinariaId <= 0) errors.Add("TipoMaquinariaId inválido");
             // UsuarioId es opcional - se puede asignar después (0 significa sin usuario)
-            
+
             // Validar edad >= 18
             var edad = DateTime.Today.Year - dto.FechaNacimiento.Year;
             if (dto.FechaNacimiento > DateTime.Today.AddYears(-edad)) edad--;
@@ -45,7 +45,7 @@ namespace MS.Choferes.Application.Services
                 {
                     var usuarioExisteRequest = new MS.Autenticacion.Grpc.ExisteUsuarioRequest { Id = dto.UsuarioId };
                     var usuarioExiste = await _userClient.ExisteUsuarioAsync(usuarioExisteRequest);
-                    
+
                     if (!usuarioExiste.Existe)
                     {
                         throw new ArgumentException($"Usuario con ID {dto.UsuarioId} no existe");
@@ -104,7 +104,8 @@ namespace MS.Choferes.Application.Services
                 FechaNacimiento = c.FechaNacimiento,
                 Disponible = c.Disponible,
                 UsuarioId = c.UsuarioId,
-                TipoMaquinariaId = c.TipoMaquinariaId
+                TipoMaquinariaId = c.TipoMaquinariaId,
+                Estado = c.Estado
             });
         }
 
@@ -159,7 +160,7 @@ namespace MS.Choferes.Application.Services
                 {
                     var usuarioExisteRequest = new MS.Autenticacion.Grpc.ExisteUsuarioRequest { Id = dto.UsuarioId };
                     var usuarioExiste = await _userClient.ExisteUsuarioAsync(usuarioExisteRequest);
-                    
+
                     if (!usuarioExiste.Existe)
                     {
                         throw new ArgumentException($"Usuario con ID {dto.UsuarioId} no existe");
@@ -211,7 +212,8 @@ namespace MS.Choferes.Application.Services
                 FechaNacimiento = c.FechaNacimiento,
                 Disponible = c.Disponible,
                 UsuarioId = c.UsuarioId,
-                TipoMaquinariaId = c.TipoMaquinariaId
+                TipoMaquinariaId = c.TipoMaquinariaId,
+                Estado = c.Estado
             });
         }
 
@@ -226,7 +228,7 @@ namespace MS.Choferes.Application.Services
             {
                 var usuarioExisteRequest = new MS.Autenticacion.Grpc.ExisteUsuarioRequest { Id = usuarioId };
                 var usuarioExiste = await _userClient.ExisteUsuarioAsync(usuarioExisteRequest);
-                
+
                 if (!usuarioExiste.Existe)
                 {
                     throw new ArgumentException($"Usuario con ID {usuarioId} no existe");
@@ -264,7 +266,8 @@ namespace MS.Choferes.Application.Services
                 FechaNacimiento = c.FechaNacimiento,
                 Disponible = c.Disponible,
                 UsuarioId = c.UsuarioId,
-                TipoMaquinariaId = c.TipoMaquinariaId
+                TipoMaquinariaId = c.TipoMaquinariaId,
+                Estado = c.Estado
             });
         }
 

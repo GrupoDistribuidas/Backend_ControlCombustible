@@ -494,7 +494,8 @@ namespace ApiGateway.Controllers
                         FechaNacimiento = chofer.FechaNacimiento,
                         Disponible = chofer.Disponible,
                         UsuarioId = chofer.UsuarioId,
-                        TipoMaquinariaId = chofer.TipoMaquinariaId
+                        TipoMaquinariaId = chofer.TipoMaquinariaId,
+                        Estado = chofer.Estado
                     });
                 }
 
@@ -565,7 +566,8 @@ namespace ApiGateway.Controllers
                         FechaNacimiento = chofer.FechaNacimiento,
                         Disponible = chofer.Disponible,
                         UsuarioId = chofer.UsuarioId,
-                        TipoMaquinariaId = chofer.TipoMaquinariaId
+                        TipoMaquinariaId = chofer.TipoMaquinariaId,
+                        Estado = chofer.Estado
                     });
                 }
 
