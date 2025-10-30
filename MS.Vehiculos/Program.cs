@@ -13,11 +13,11 @@ namespace MS.Vehiculos
             
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure Kestrel to listen HTTPS/HTTP2 on localhost:5132 for quick local gRPC testing
+            // Configure Kestrel to listen HTTPS/HTTP2 on localhost:5135 for quick local gRPC testing
             builder.WebHost.ConfigureKestrel(options =>
             {
-                // Ensure HTTP/2 is used and HTTPS enabled on port 5132
-                options.ListenLocalhost(5132, listenOptions =>
+                // Ensure HTTP/2 is used and HTTPS enabled on port 5135
+                options.ListenLocalhost(5135, listenOptions =>
                 {
                     listenOptions.Protocols = HttpProtocols.Http2;
                     listenOptions.UseHttps(); // will use the dev certificate in Development
