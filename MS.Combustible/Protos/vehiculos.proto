@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Vehiculos.Protos";
+
+package vehiculos;
+
+message GetByIdRequest { 
+  int32 id = 1; 
+}
+
+message VehiculoDto {
+  int32 id = 1;
+  string nombre = 2;
+  string placa = 3;
+  string marca = 4;
+  string modelo = 5;
+  int32 tipoMaquinariaId = 6;
+  string disponible = 7;
+  double consumoCombustibleKm = 8;
+  double capacidadCombustible = 9;
+}
+
+message ActualizarDisponibilidadRequest {
+  int32 id = 1;
+  string disponible = 2; // "Disponible", "No Disponible", "En mantenimiento"
+}
+
+message ActualizarDisponibilidadResponse {
+  int32 affected = 1;
+}
+
+service VehiculosService {
+  rpc GetById (GetByIdRequest) returns (VehiculoDto);
+  rpc ActualizarDisponibilidad (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);
+}

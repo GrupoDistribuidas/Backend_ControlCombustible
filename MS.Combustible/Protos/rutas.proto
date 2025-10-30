@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Rutas.Protos";
+
+package rutas;
+
+message GetByIdRequest { 
+  int32 id = 1; 
+}
+
+message RutaDto {
+  int32 id = 1;
+  string nombre = 2;
+  int32 puntoInicioId = 3;
+  int32 puntoFinId = 4;
+  double distancia = 5;
+  bool estado = 6;
+}
+
+service RutasService {
+  rpc GetById (GetByIdRequest) returns (RutaDto);
+}

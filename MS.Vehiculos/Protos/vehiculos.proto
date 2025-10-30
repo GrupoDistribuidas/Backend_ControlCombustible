@@ -48,6 +48,15 @@ message ActualizarEstadoResponse {
   int32 affected = 1;
 }
 
+message ActualizarDisponibilidadRequest {
+  int32 id = 1;
+  string disponible = 2; // "Disponible", "No Disponible", "En mantenimiento"
+}
+
+message ActualizarDisponibilidadResponse {
+  int32 affected = 1;
+}
+
 message ExistsByPlacaRequest {
   string placa = 1;
 }
@@ -72,6 +81,10 @@ message SearchByTermRequest {
   string term = 1;
 }
 
+message GetByIdRequest {
+  int32 id = 1;
+}
+
 message VehiculoDto {
   int32 id = 1;
   string nombre = 2;
@@ -87,8 +100,10 @@ message VehiculoDto {
 service VehiculosService {
   rpc CrearVehiculo (CrearVehiculoRequest) returns (CrearVehiculoResponse);
   rpc ListarVehiculos (google.protobuf.Empty) returns (stream VehiculoDto);
+  rpc GetById (GetByIdRequest) returns (VehiculoDto);
   rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
   rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
+  rpc ActualizarDisponibilidad (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);
   rpc ExistsByPlaca (ExistsByPlacaRequest) returns (ExistsByPlacaResponse);
   rpc Search (SearchRequest) returns (stream VehiculoDto);
   rpc SearchByTerm (SearchByTermRequest) returns (stream VehiculoDto);
