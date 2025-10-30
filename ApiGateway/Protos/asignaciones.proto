@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Combustible.Protos";
+
+package combustible;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message CrearAsignacionRequest {
+  int32 choferId = 1;
+  int32 vehiculoId = 2;
+  int32 rutaId = 3;
+  string fechaAsignacion = 4; // ISO date
+}
+
+message CrearAsignacionResponse { 
+  int32 id = 1; 
+}
+
+message AsignacionDto {
+  int32 id = 1;
+  int32 choferId = 2;
+  int32 vehiculoId = 3;
+  int32 rutaId = 4;
+  string fechaAsignacion = 5;
+  double combustibleEstimado = 6;
+  int32 estadoId = 7;
+}
+
+message ActualizarAsignacionRequest {
+  int32 id = 1;
+  int32 choferId = 2;
+  int32 vehiculoId = 3;
+  int32 rutaId = 4;
+  string fechaAsignacion = 5;
+  google.protobuf.Int32Value estadoId = 6;
+}
+
+message ActualizarAsignacionResponse { 
+  int32 affected = 1; 
+}
+
+message GetByIdRequest { 
+  int32 id = 1; 
+}
+
+message CambiarEstadoRequest { 
+  int32 id = 1; 
+  string nuevoEstado = 2; // Asignada, En Proceso, Completada, Cancelada, Pausada
+}
+
+message CambiarEstadoResponse { 
+  int32 affected = 1; 
+}
+
+message GetByChoferIdRequest { 
+  int32 choferId = 1; 
+}
+
+message GetByVehiculoIdRequest { 
+  int32 vehiculoId = 1; 
+}
+
+message GetByEstadoRequest { 
+  string estadoNombre = 1; 
+}
+
+service AsignacionesService {
+  rpc CrearAsignacion (CrearAsignacionRequest) returns (CrearAsignacionResponse);
+  rpc ListarAsignaciones (google.protobuf.Empty) returns (stream AsignacionDto);
+  rpc GetById (GetByIdRequest) returns (AsignacionDto);
+  rpc ActualizarAsignacion (ActualizarAsignacionRequest) returns (ActualizarAsignacionResponse);
+  rpc CambiarEstado (CambiarEstadoRequest) returns (CambiarEstadoResponse);
+  rpc GetByChoferId (GetByChoferIdRequest) returns (stream AsignacionDto);
+  rpc GetByVehiculoId (GetByVehiculoIdRequest) returns (stream AsignacionDto);
+  rpc GetByEstado (GetByEstadoRequest) returns (stream AsignacionDto);
+}
