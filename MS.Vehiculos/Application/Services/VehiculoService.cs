@@ -73,6 +73,25 @@ namespace MS.Vehiculos.Application.Services
             });
         }
 
+        public async Task<VehiculoDto?> GetByIdAsync(int id)
+        {
+            var vehiculo = await _repo.GetByIdAsync(id);
+            if (vehiculo == null) return null;
+
+            return new VehiculoDto
+            {
+                Id = vehiculo.Id,
+                Nombre = vehiculo.Nombre,
+                Placa = vehiculo.Placa,
+                Marca = vehiculo.Marca,
+                Modelo = vehiculo.Modelo,
+                TipoMaquinariaId = vehiculo.TipoMaquinariaId,
+                Disponible = vehiculo.Disponible,
+                ConsumoCombustibleKm = vehiculo.ConsumoCombustibleKm,
+                CapacidadCombustible = vehiculo.CapacidadCombustible
+            };
+        }
+
         public async Task<int> ActualizarVehiculoAsync(ActualizarVehiculoDto dto)
         {
             // Validaciones
@@ -125,6 +144,22 @@ namespace MS.Vehiculos.Application.Services
 
             existing.Estado = estado;
             return await _repo.UpdateAsync(existing, estado);
+        }
+
+        public async Task<int> ActualizarDisponibilidadAsync(int id, string disponible)
+        {
+            if (id <= 0) throw new ArgumentException("Id inválido");
+            if (string.IsNullOrWhiteSpace(disponible)) throw new ArgumentException("Disponible es requerido");
+
+            var valoresValidos = new[] { "Disponible", "No Disponible", "En mantenimiento" };
+            if (!valoresValidos.Contains(disponible))
+                throw new ArgumentException($"Valor de disponibilidad inválido. Valores permitidos: {string.Join(", ", valoresValidos)}");
+
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) throw new ArgumentException("Vehículo no encontrado");
+
+            existing.Disponible = disponible;
+            return await _repo.UpdateAsync(existing, existing.Estado);
         }
 
         public async Task<bool> ExistsByPlacaAsync(string placa)
