@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MS.Rutas.Protos;
-using Grpc.Net.Client;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using System.ComponentModel.DataAnnotations;
+using GrpcStatusCode = Grpc.Core.StatusCode;
 
 namespace ApiGateway.Controllers
 {
@@ -18,12 +18,12 @@ namespace ApiGateway.Controllers
     public class RutasController : ControllerBase
     {
         private readonly ILogger<RutasController> _logger;
-        private readonly string _rutasServiceUrl;
+        private readonly RutasService.RutasServiceClient _rutasClient;
 
-        public RutasController(ILogger<RutasController> logger, IConfiguration configuration)
+        public RutasController(ILogger<RutasController> logger, RutasService.RutasServiceClient rutasClient)
         {
             _logger = logger;
-            _rutasServiceUrl = configuration.GetValue<string>("Services:RutasService:Url") ?? "https://localhost:5134";
+            _rutasClient = rutasClient;
         }
 
         /// <summary>
@@ -32,11 +32,18 @@ namespace ApiGateway.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearRuta([FromBody] CrearRutaRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
-
                 var grpcRequest = new CrearRutaRequest
                 {
                     Nombre = request.Nombre,
@@ -45,7 +52,7 @@ namespace ApiGateway.Controllers
                     Distancia = request.Distancia
                 };
 
-                var response = await client.CrearRutaAsync(grpcRequest);
+                var response = await _rutasClient.CrearRutaAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -58,18 +65,15 @@ namespace ApiGateway.Controllers
             {
                 _logger.LogError(ex, "Error gRPC al crear ruta");
                 
-                var errorResponse = ex.StatusCode switch
-                {
-                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Message = ex.Status.Detail }),
-                    _ => base.StatusCode(500, new { Message = "Error interno del servidor" })
-                };
-                
-                return errorResponse;
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear ruta");
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -81,12 +85,11 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
+                // Using injected client
 
                 var rutas = new List<object>();
 
-                using var call = client.ListarRutas(new Empty());
+                using var call = _rutasClient.ListarRutas(new Empty());
 
                 await foreach (var ruta in call.ResponseStream.ReadAllAsync())
                 {
@@ -111,7 +114,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar rutas");
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -123,12 +126,11 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
+                // Using injected client
 
                 var rutas = new List<object>();
 
-                using var call = client.ListarTodasRutas(new Empty());
+                using var call = _rutasClient.ListarTodasRutas(new Empty());
 
                 await foreach (var ruta in call.ResponseStream.ReadAllAsync())
                 {
@@ -153,7 +155,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar todas las rutas");
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -165,11 +167,10 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new MS.Rutas.Protos.GetByIdRequest { Id = id };
-                var ruta = await client.GetByIdAsync(grpcRequest);
+                var ruta = await _rutasClient.GetByIdAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -188,12 +189,12 @@ namespace ApiGateway.Controllers
             }
             catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
             {
-                return NotFound(new { Message = "Ruta no encontrada" });
+                return NotFound(new { Success = false, Message = "Ruta no encontrada" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener ruta por ID: {Id}", id);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -203,11 +204,18 @@ namespace ApiGateway.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarRuta(int id, [FromBody] ActualizarRutaRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
-
                 var grpcRequest = new ActualizarRutaRequest
                 {
                     Id = id,
@@ -218,7 +226,7 @@ namespace ApiGateway.Controllers
                     Estado = request.Estado
                 };
 
-                var response = await client.ActualizarRutaAsync(grpcRequest);
+                var response = await _rutasClient.ActualizarRutaAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -231,18 +239,15 @@ namespace ApiGateway.Controllers
             {
                 _logger.LogError(ex, "Error gRPC al actualizar ruta: {Id}", id);
                 
-                var errorResponse = ex.StatusCode switch
-                {
-                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Message = ex.Status.Detail }),
-                    _ => base.StatusCode(500, new { Message = "Error interno del servidor" })
-                };
-                
-                return errorResponse;
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al actualizar ruta: {Id}", id);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -254,8 +259,7 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new MS.Rutas.Protos.ActualizarEstadoRequest
                 {
@@ -263,7 +267,7 @@ namespace ApiGateway.Controllers
                     Estado = request.Estado
                 };
 
-                var response = await client.ActualizarEstadoRutaAsync(grpcRequest);
+                var response = await _rutasClient.ActualizarEstadoRutaAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -276,18 +280,15 @@ namespace ApiGateway.Controllers
             {
                 _logger.LogError(ex, "Error gRPC al actualizar estado de ruta: {Id}", id);
                 
-                var errorResponse = ex.StatusCode switch
-                {
-                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Message = ex.Status.Detail }),
-                    _ => base.StatusCode(500, new { Message = "Error interno del servidor" })
-                };
-                
-                return errorResponse;
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al actualizar estado de ruta: {Id}", id);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -299,14 +300,13 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new RutasService.RutasServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new MS.Rutas.Protos.SearchByTermRequest { Term = term };
 
                 var rutas = new List<object>();
 
-                using var call = client.SearchByTerm(grpcRequest);
+                using var call = _rutasClient.SearchByTerm(grpcRequest);
 
                 await foreach (var ruta in call.ResponseStream.ReadAllAsync())
                 {
@@ -331,7 +331,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error en búsqueda por término: {Term}", term);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
     }

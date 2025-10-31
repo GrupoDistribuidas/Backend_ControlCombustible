@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MS.Rutas.Protos;
-using Grpc.Net.Client;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using System.ComponentModel.DataAnnotations;
+using GrpcStatusCode = Grpc.Core.StatusCode;
 
 namespace ApiGateway.Controllers
 {
@@ -18,22 +18,29 @@ namespace ApiGateway.Controllers
     public class PuntosController : ControllerBase
     {
         private readonly ILogger<PuntosController> _logger;
-        private readonly string _rutasServiceUrl;
+        private readonly PuntosService.PuntosServiceClient _puntosClient;
 
-        public PuntosController(ILogger<PuntosController> logger, IConfiguration configuration)
+        public PuntosController(ILogger<PuntosController> logger, PuntosService.PuntosServiceClient puntosClient)
         {
             _logger = logger;
-            _rutasServiceUrl = configuration.GetValue<string>("Services:RutasService:Url") ?? "https://localhost:5134";
+            _puntosClient = puntosClient;
         }
 
         [HttpPost]
         public async Task<IActionResult> CrearPunto([FromBody] CrearPuntoRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new PuntosService.PuntosServiceClient(channel);
-
                 var grpcRequest = new CrearPuntoRequest
                 {
                     Nombre = request.Nombre,
@@ -42,16 +49,23 @@ namespace ApiGateway.Controllers
                     TipoPunto = request.TipoPunto
                 };
 
-                var response = await client.CrearPuntoAsync(grpcRequest);
+                var response = await _puntosClient.CrearPuntoAsync(grpcRequest);
 
                 return Ok(new { Success = true, Message = "Punto creado exitosamente", Data = new { Id = response.Id } });
             }
             catch (RpcException ex)
             {
                 _logger.LogError(ex, "Error gRPC al crear punto");
-                return ex.StatusCode == Grpc.Core.StatusCode.InvalidArgument 
-                    ? BadRequest(new { Message = ex.Status.Detail }) 
-                    : base.StatusCode(500, new { Message = "Error interno del servidor" });
+                
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear punto");
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -60,11 +74,10 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new PuntosService.PuntosServiceClient(channel);
+                // Using injected client
 
                 var puntos = new List<object>();
-                using var call = client.ListarPuntos(new Empty());
+                using var call = _puntosClient.ListarPuntos(new Empty());
 
                 await foreach (var punto in call.ResponseStream.ReadAllAsync())
                 {
@@ -83,7 +96,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar puntos");
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -92,11 +105,10 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new PuntosService.PuntosServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new GetPuntoByIdRequest { Id = id };
-                var punto = await client.GetByIdAsync(grpcRequest);
+                var punto = await _puntosClient.GetByIdAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -114,23 +126,30 @@ namespace ApiGateway.Controllers
             }
             catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
             {
-                return NotFound(new { Message = "Punto no encontrado" });
+                return NotFound(new { Success = false, Message = "Punto no encontrado" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener punto por ID: {Id}", id);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> ActualizarPunto(int id, [FromBody] ActualizarPuntoRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new PuntosService.PuntosServiceClient(channel);
-
                 var grpcRequest = new ActualizarPuntoRequest
                 {
                     Id = id,
@@ -140,7 +159,7 @@ namespace ApiGateway.Controllers
                     TipoPunto = request.TipoPunto
                 };
 
-                var response = await client.ActualizarPuntoAsync(grpcRequest);
+                var response = await _puntosClient.ActualizarPuntoAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -152,9 +171,16 @@ namespace ApiGateway.Controllers
             catch (RpcException ex)
             {
                 _logger.LogError(ex, "Error gRPC al actualizar punto: {Id}", id);
-                return ex.StatusCode == Grpc.Core.StatusCode.InvalidArgument 
-                    ? BadRequest(new { Message = ex.Status.Detail }) 
-                    : base.StatusCode(500, new { Message = "Error interno del servidor" });
+                
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar punto: {Id}", id);
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -163,13 +189,12 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_rutasServiceUrl);
-                var client = new PuntosService.PuntosServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new SearchPuntoByTermRequest { Term = term };
 
                 var puntos = new List<object>();
-                using var call = client.SearchByTerm(grpcRequest);
+                using var call = _puntosClient.SearchByTerm(grpcRequest);
 
                 await foreach (var punto in call.ResponseStream.ReadAllAsync())
                 {
@@ -188,7 +213,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error en búsqueda por término: {Term}", term);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
     }

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MS.Vehiculos.Protos;
-using Grpc.Net.Client;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using GrpcStatusCode = Grpc.Core.StatusCode;
 using System.ComponentModel.DataAnnotations;
 
 namespace ApiGateway.Controllers
@@ -13,17 +13,19 @@ namespace ApiGateway.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Requiere JWT para todos los endpoints
+    [Authorize]
     [Produces("application/json")]
     public class VehiculosController : ControllerBase
     {
         private readonly ILogger<VehiculosController> _logger;
-        private readonly string _vehiculosServiceUrl;
+        private readonly VehiculosService.VehiculosServiceClient _vehiculosClient;
 
-        public VehiculosController(ILogger<VehiculosController> logger, IConfiguration configuration)
+        public VehiculosController(
+            ILogger<VehiculosController> logger, 
+            VehiculosService.VehiculosServiceClient vehiculosClient)
         {
             _logger = logger;
-            _vehiculosServiceUrl = configuration.GetValue<string>("Services:VehiculosService:Url") ?? "https://localhost:7056";
+            _vehiculosClient = vehiculosClient;
         }
 
         /// <summary>
@@ -42,11 +44,18 @@ namespace ApiGateway.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> CrearVehiculo([FromBody] CrearVehiculoRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
-
                 var grpcRequest = new CrearVehiculoRequest
                 {
                     Nombre = request.Nombre,
@@ -59,7 +68,7 @@ namespace ApiGateway.Controllers
                     CapacidadCombustible = request.CapacidadCombustible
                 };
 
-                var response = await client.CrearVehiculoAsync(grpcRequest);
+                var response = await _vehiculosClient.CrearVehiculoAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -68,10 +77,19 @@ namespace ApiGateway.Controllers
                     Data = new { Id = response.Id }
                 });
             }
+            catch (RpcException ex)
+            {
+                _logger.LogError(ex, "Error gRPC creando vehículo");
+                
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creando vehículo");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -90,12 +108,11 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
+                // Using injected client
 
                 var vehiculos = new List<object>();
                 
-                using var call = client.ListarVehiculos(new Empty());
+                using var call = _vehiculosClient.ListarVehiculos(new Empty());
                 
                 await foreach (var vehiculo in call.ResponseStream.ReadAllAsync())
                 {
@@ -123,7 +140,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error obteniendo vehículos");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -146,11 +163,18 @@ namespace ApiGateway.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> ActualizarVehiculo(int id, [FromBody] ActualizarVehiculoRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
-
                 var grpcRequest = new ActualizarVehiculoRequest
                 {
                     Id = id,
@@ -169,7 +193,7 @@ namespace ApiGateway.Controllers
                     grpcRequest.Estado = request.Estado.Value;
                 }
 
-                var response = await client.ActualizarVehiculoAsync(grpcRequest);
+                var response = await _vehiculosClient.ActualizarVehiculoAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -178,10 +202,22 @@ namespace ApiGateway.Controllers
                     Data = new { AffectedRows = response.Affected }
                 });
             }
+            catch (RpcException ex)
+            {
+                _logger.LogError(ex, "Error gRPC actualizando vehículo {Id}", id);
+                
+                if (ex.StatusCode == GrpcStatusCode.NotFound)
+                    return NotFound(new { Success = false, Message = "Vehículo no encontrado" });
+                    
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
+                    
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error actualizando vehículo {Id}", id);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -206,8 +242,7 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new ActualizarEstadoRequest
                 {
@@ -215,7 +250,7 @@ namespace ApiGateway.Controllers
                     Estado = request.Estado
                 };
 
-                var response = await client.ActualizarEstadoVehiculoAsync(grpcRequest);
+                var response = await _vehiculosClient.ActualizarEstadoVehiculoAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -227,7 +262,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error actualizando estado del vehículo {Id}", id);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -249,15 +284,14 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new ExistsByPlacaRequest
                 {
                     Placa = placa
                 };
 
-                var response = await client.ExistsByPlacaAsync(grpcRequest);
+                var response = await _vehiculosClient.ExistsByPlacaAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -269,7 +303,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error verificando existencia de placa {Placa}", placa);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -308,8 +342,7 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new SearchRequest();
 
@@ -334,7 +367,7 @@ namespace ApiGateway.Controllers
 
                 var vehiculos = new List<object>();
                 
-                using var call = client.Search(grpcRequest);
+                using var call = _vehiculosClient.Search(grpcRequest);
                 
                 await foreach (var vehiculo in call.ResponseStream.ReadAllAsync())
                 {
@@ -362,7 +395,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error en búsqueda de vehículos");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -384,8 +417,7 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new VehiculosService.VehiculosServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new SearchByTermRequest
                 {
@@ -394,7 +426,7 @@ namespace ApiGateway.Controllers
 
                 var vehiculos = new List<object>();
                 
-                using var call = client.SearchByTerm(grpcRequest);
+                using var call = _vehiculosClient.SearchByTerm(grpcRequest);
                 
                 await foreach (var vehiculo in call.ResponseStream.ReadAllAsync())
                 {
@@ -422,7 +454,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error en búsqueda por término {Term}", term);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
     }
@@ -575,3 +607,4 @@ namespace ApiGateway.Controllers
         public bool Estado { get; set; }
     }
 }
+
