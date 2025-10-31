@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MS.Vehiculos.Protos;
-using Grpc.Net.Client;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using System.ComponentModel.DataAnnotations;
+using GrpcStatusCode = Grpc.Core.StatusCode;
 
 namespace ApiGateway.Controllers
 {
@@ -18,12 +18,12 @@ namespace ApiGateway.Controllers
     public class TiposController : ControllerBase
     {
         private readonly ILogger<TiposController> _logger;
-        private readonly string _vehiculosServiceUrl;
+        private readonly TiposService.TiposServiceClient _tiposClient;
 
-        public TiposController(ILogger<TiposController> logger, IConfiguration configuration)
+        public TiposController(ILogger<TiposController> logger, TiposService.TiposServiceClient tiposClient)
         {
             _logger = logger;
-            _vehiculosServiceUrl = configuration.GetValue<string>("Services:VehiculosService:Url") ?? "https://localhost:7056";
+            _tiposClient = tiposClient;
         }
 
         /// <summary>
@@ -41,12 +41,9 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_vehiculosServiceUrl);
-                var client = new TiposService.TiposServiceClient(channel);
-
                 var tipos = new List<object>();
                 
-                using var call = client.ListarTipos(new Empty());
+                using var call = _tiposClient.ListarTipos(new Empty());
                 
                 await foreach (var tipo in call.ResponseStream.ReadAllAsync())
                 {
@@ -68,7 +65,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error obteniendo tipos de maquinaria");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
     }

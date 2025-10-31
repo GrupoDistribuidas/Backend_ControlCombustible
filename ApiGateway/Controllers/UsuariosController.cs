@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MS.Autenticacion.Grpc;
-using Grpc.Net.Client;
 using Grpc.Core;
 using System.ComponentModel.DataAnnotations;
+using GrpcStatusCode = Grpc.Core.StatusCode;
 
 namespace ApiGateway.Controllers
 {
@@ -17,12 +17,14 @@ namespace ApiGateway.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly ILogger<UsuariosController> _logger;
-        private readonly string _authServiceUrl;
+        private readonly UserService.UserServiceClient _userClient;
+        private readonly MS.Choferes.Protos.ChoferesService.ChoferesServiceClient _choferesClient;
 
-        public UsuariosController(ILogger<UsuariosController> logger, IConfiguration configuration)
+        public UsuariosController(ILogger<UsuariosController> logger, UserService.UserServiceClient userClient, MS.Choferes.Protos.ChoferesService.ChoferesServiceClient choferesClient)
         {
             _logger = logger;
-            _authServiceUrl = configuration.GetValue<string>("Services:AuthService:Url") ?? "https://localhost:5235";
+            _userClient = userClient;
+            _choferesClient = choferesClient;
         }
 
         /// <summary>
@@ -43,11 +45,18 @@ namespace ApiGateway.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var client = new UserService.UserServiceClient(channel);
-
                 var grpcRequest = new CrearUsuarioRequest
                 {
                     Email = request.Email,
@@ -56,7 +65,7 @@ namespace ApiGateway.Controllers
                     RolId = request.RolId
                 };
 
-                var response = await client.CrearUsuarioAsync(grpcRequest);
+                var response = await _userClient.CrearUsuarioAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -69,20 +78,18 @@ namespace ApiGateway.Controllers
             {
                 _logger.LogError(ex, "Error gRPC al crear usuario");
                 
-                var errorResponse = ex.StatusCode switch
-                {
-                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Message = ex.Status.Detail }),
-                    Grpc.Core.StatusCode.AlreadyExists => BadRequest(new { Message = ex.Status.Detail }),
-                    Grpc.Core.StatusCode.NotFound => NotFound(new { Message = ex.Status.Detail }),
-                    _ => base.StatusCode(500, new { Message = "Error interno del servidor" })
-                };
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument || ex.StatusCode == GrpcStatusCode.AlreadyExists)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
                 
-                return errorResponse;
+                if (ex.StatusCode == GrpcStatusCode.NotFound)
+                    return NotFound(new { Success = false, Message = ex.Status.Detail });
+                    
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear usuario");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -101,12 +108,11 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var client = new UserService.UserServiceClient(channel);
+                // Using injected client
 
                 var usuarios = new List<object>();
 
-                using var call = client.ListarUsuarios(new ListarUsuariosRequest());
+                using var call = _userClient.ListarUsuarios(new ListarUsuariosRequest());
 
                 await foreach (var usuario in call.ResponseStream.ReadAllAsync())
                 {
@@ -134,7 +140,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar usuarios");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -156,15 +162,14 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var client = new UserService.UserServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new ObtenerUsuarioPorIdRequest { Id = id };
-                var response = await client.ObtenerUsuarioPorIdAsync(grpcRequest);
+                var response = await _userClient.ObtenerUsuarioPorIdAsync(grpcRequest);
 
                 if (!response.Success)
                 {
-                    return NotFound(new { Message = response.Message });
+                    return NotFound(new { Success = false, Message = response.Message });
                 }
 
                 return Ok(new
@@ -188,7 +193,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener usuario por ID: {Id}", id);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -213,8 +218,7 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var client = new UserService.UserServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new ActualizarUsuarioRequest
                 {
@@ -229,7 +233,7 @@ namespace ApiGateway.Controllers
                     grpcRequest.Password = request.Password;
                 }
 
-                var response = await client.ActualizarUsuarioAsync(grpcRequest);
+                var response = await _userClient.ActualizarUsuarioAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -244,10 +248,10 @@ namespace ApiGateway.Controllers
                 
                 var errorResponse = ex.StatusCode switch
                 {
-                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Message = ex.Status.Detail }),
-                    Grpc.Core.StatusCode.AlreadyExists => BadRequest(new { Message = ex.Status.Detail }),
-                    Grpc.Core.StatusCode.NotFound => NotFound(new { Message = ex.Status.Detail }),
-                    _ => base.StatusCode(500, new { Message = "Error interno del servidor" })
+                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Success = false, Message = ex.Status.Detail }),
+                    Grpc.Core.StatusCode.AlreadyExists => BadRequest(new { Success = false, Message = ex.Status.Detail }),
+                    Grpc.Core.StatusCode.NotFound => NotFound(new { Success = false, Message = ex.Status.Detail }),
+                    _ => base.StatusCode(500, new { Success = false, Message = "Error interno del servidor" })
                 };
                 
                 return errorResponse;
@@ -255,7 +259,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al actualizar usuario: {Id}", id);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -278,18 +282,25 @@ namespace ApiGateway.Controllers
         [ProducesResponseType(500)]
         public async Task<IActionResult> ActualizarEstadoUsuario(int id, [FromBody] ActualizarEstadoUsuarioRequestDto request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new 
+                { 
+                    Success = false,
+                    Message = "Datos de entrada inválidos",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
             try
             {
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var client = new UserService.UserServiceClient(channel);
-
                 var grpcRequest = new ActualizarEstadoUsuarioRequest
                 {
                     Id = id,
                     Estado = request.Estado
                 };
 
-                var response = await client.ActualizarEstadoUsuarioAsync(grpcRequest);
+                var response = await _userClient.ActualizarEstadoUsuarioAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -302,19 +313,18 @@ namespace ApiGateway.Controllers
             {
                 _logger.LogError(ex, "Error gRPC al actualizar estado del usuario: {Id}", id);
                 
-                var errorResponse = ex.StatusCode switch
-                {
-                    Grpc.Core.StatusCode.InvalidArgument => BadRequest(new { Message = ex.Status.Detail }),
-                    Grpc.Core.StatusCode.NotFound => NotFound(new { Message = ex.Status.Detail }),
-                    _ => base.StatusCode(500, new { Message = "Error interno del servidor" })
-                };
+                if (ex.StatusCode == GrpcStatusCode.InvalidArgument)
+                    return BadRequest(new { Success = false, Message = ex.Status.Detail });
                 
-                return errorResponse;
+                if (ex.StatusCode == GrpcStatusCode.NotFound)
+                    return NotFound(new { Success = false, Message = ex.Status.Detail });
+                    
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al actualizar estado del usuario: {Id}", id);
-                return base.StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -334,11 +344,10 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var client = new UserService.UserServiceClient(channel);
+                // Using injected client
 
                 var grpcRequest = new ExisteUsuarioRequest { Id = id };
-                var response = await client.ExisteUsuarioAsync(grpcRequest);
+                var response = await _userClient.ExisteUsuarioAsync(grpcRequest);
 
                 return Ok(new
                 {
@@ -349,7 +358,7 @@ namespace ApiGateway.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al verificar existencia de usuario: {Id}", id);
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
 
@@ -371,17 +380,12 @@ namespace ApiGateway.Controllers
         {
             try
             {
-                var choferesServiceUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "https://localhost:5133";
-                
                 // 0️⃣ VERIFICAR QUE EL CHOFER NO TENGA USUARIO ASIGNADO
                 try
                 {
-                    using var choferesChannelCheck = GrpcChannel.ForAddress(choferesServiceUrl);
-                    var choferesClientCheck = new MS.Choferes.Protos.ChoferesService.ChoferesServiceClient(choferesChannelCheck);
-
                     // Obtener todos los choferes y buscar el específico
                     var choferes = new List<MS.Choferes.Protos.ChoferDto>();
-                    using var call = choferesClientCheck.ListarChoferes(new Google.Protobuf.WellKnownTypes.Empty());
+                    using var call = _choferesClient.ListarChoferes(new Google.Protobuf.WellKnownTypes.Empty());
                     
                     await foreach (var chofer in call.ResponseStream.ReadAllAsync())
                     {
@@ -412,13 +416,10 @@ namespace ApiGateway.Controllers
                 catch (RpcException ex)
                 {
                     _logger.LogError(ex, "Error al verificar estado del chofer {ChoferId}", request.ChoferId);
-                    return StatusCode(500, new { Message = "Error al verificar el estado del chofer" });
+                    return StatusCode(500, new { Success = false, Message = "Error al verificar el estado del chofer" });
                 }
 
                 // 1️⃣ CREAR EL USUARIO (solo si el chofer no tiene usuario)
-                using var channel = GrpcChannel.ForAddress(_authServiceUrl);
-                var userClient = new UserService.UserServiceClient(channel);
-
                 var crearUsuarioRequest = new CrearUsuarioRequest
                 {
                     NombreUsuario = request.Username,
@@ -427,22 +428,19 @@ namespace ApiGateway.Controllers
                     RolId = request.RolId
                 };
 
-                var usuarioResponse = await userClient.CrearUsuarioAsync(crearUsuarioRequest);
+                var usuarioResponse = await _userClient.CrearUsuarioAsync(crearUsuarioRequest);
                 var usuarioId = usuarioResponse.UsuarioId;
 
                 // 2️⃣ ASIGNAR EL USUARIO AL CHOFER
                 try
                 {
-                    using var choferesChannel = GrpcChannel.ForAddress(choferesServiceUrl);
-                    var choferesClient = new MS.Choferes.Protos.ChoferesService.ChoferesServiceClient(choferesChannel);
-
                     var asignarRequest = new MS.Choferes.Protos.AsignarUsuarioRequest
                     {
                         ChoferId = request.ChoferId,
                         UsuarioId = usuarioId
                     };
 
-                    var asignarResponse = await choferesClient.AsignarUsuarioAsync(asignarRequest);
+                    var asignarResponse = await _choferesClient.AsignarUsuarioAsync(asignarRequest);
 
                     return Ok(new
                     {
@@ -469,7 +467,7 @@ namespace ApiGateway.Controllers
                             Id = usuarioId,
                             Estado = 0
                         };
-                        await userClient.ActualizarEstadoUsuarioAsync(desactivarRequest);
+                        await _userClient.ActualizarEstadoUsuarioAsync(desactivarRequest);
                     }
                     catch (Exception rollbackEx)
                     {
@@ -492,12 +490,12 @@ namespace ApiGateway.Controllers
             catch (RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.InvalidArgument)
             {
                 _logger.LogWarning("Error de validación al crear usuario y asignar chofer: {Detail}", ex.Status.Detail);
-                return BadRequest(new { Message = ex.Status.Detail });
+                return BadRequest(new { Success = false, Message = ex.Status.Detail });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear usuario y asignar chofer");
-                return StatusCode(500, new { Message = "Error interno del servidor" });
+                return StatusCode(500, new { Success = false, Message = "Error interno del servidor" });
             }
         }
     }
