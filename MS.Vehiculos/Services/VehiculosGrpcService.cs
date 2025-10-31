@@ -65,6 +65,39 @@ namespace MS.Vehiculos.Services
             }
         }
 
+        public override async Task<MS.Vehiculos.Protos.VehiculoDto> GetById(MS.Vehiculos.Protos.GetByIdRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var vehiculo = await _vehiculoService.GetByIdAsync(request.Id);
+                if (vehiculo == null)
+                {
+                    throw new RpcException(new Status(StatusCode.NotFound, $"Vehículo con ID {request.Id} no encontrado"));
+                }
+
+                return new MS.Vehiculos.Protos.VehiculoDto
+                {
+                    Id = vehiculo.Id,
+                    Nombre = vehiculo.Nombre,
+                    Placa = vehiculo.Placa,
+                    Marca = vehiculo.Marca,
+                    Modelo = vehiculo.Modelo,
+                    TipoMaquinariaId = vehiculo.TipoMaquinariaId,
+                    Disponible = vehiculo.Disponible,
+                    ConsumoCombustibleKm = (double)vehiculo.ConsumoCombustibleKm,
+                    CapacidadCombustible = (double)vehiculo.CapacidadCombustible
+                };
+            }
+            catch (RpcException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al buscar vehículo"));
+            }
+        }
+
         public override async Task<MS.Vehiculos.Protos.ActualizarVehiculoResponse> ActualizarVehiculo(MS.Vehiculos.Protos.ActualizarVehiculoRequest request, ServerCallContext context)
         {
                 var dto = new AppDtos.ActualizarVehiculoDto
@@ -111,6 +144,24 @@ namespace MS.Vehiculos.Services
             catch (Exception)
             {
                 throw new RpcException(new Status(StatusCode.Internal, "Error interno al actualizar estado"));
+            }
+        }
+
+        public override async Task<MS.Vehiculos.Protos.ActualizarDisponibilidadResponse> ActualizarDisponibilidad(MS.Vehiculos.Protos.ActualizarDisponibilidadRequest request, ServerCallContext context)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Disponible)) throw new ArgumentException("Disponible es requerido");
+                var affected = await _vehiculoService.ActualizarDisponibilidadAsync(request.Id, request.Disponible);
+                return new MS.Vehiculos.Protos.ActualizarDisponibilidadResponse { Affected = affected };
+            }
+            catch (ArgumentException ex)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
+            }
+            catch (Exception)
+            {
+                throw new RpcException(new Status(StatusCode.Internal, "Error interno al actualizar disponibilidad"));
             }
         }
 

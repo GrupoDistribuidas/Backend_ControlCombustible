@@ -106,6 +106,34 @@ Para obtener un token:
                 options.Address = new Uri(msAuthGrpcUrl);
             });
 
+            // Configurar cliente gRPC para MS.Vehiculos
+            var msVehiculosGrpcUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "https://localhost:5135";
+            builder.Services.AddGrpcClient<MS.Vehiculos.Protos.VehiculosService.VehiculosServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msVehiculosGrpcUrl);
+            });
+
+            // Configurar cliente gRPC para MS.Choferes
+            var msChoferesGrpcUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "https://localhost:5133";
+            builder.Services.AddGrpcClient<MS.Choferes.Protos.ChoferesService.ChoferesServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msChoferesGrpcUrl);
+            });
+
+            // Configurar cliente gRPC para MS.Rutas
+            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "https://localhost:5134";
+            builder.Services.AddGrpcClient<MS.Rutas.Protos.RutasService.RutasServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msRutasGrpcUrl);
+            });
+
+            // Configurar cliente gRPC para MS.Combustible (Asignaciones)
+            var msCombustibleGrpcUrl = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL") ?? "https://localhost:5136";
+            builder.Services.AddGrpcClient<MS.Combustible.Protos.AsignacionesService.AsignacionesServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msCombustibleGrpcUrl);
+            });
+
             // 🔑 Configuración JWT
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET no configurado en .env");
             var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "MS.Autenticacion";

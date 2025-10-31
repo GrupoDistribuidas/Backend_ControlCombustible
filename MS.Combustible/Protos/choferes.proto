@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Choferes.Protos";
+
+package choferes;
+
+import "google/protobuf/wrappers.proto";
+
+message GetByIdRequest { 
+  int32 id = 1; 
+}
+
+message ChoferDto {
+  int32 id = 1;
+  string nombreCompleto = 6;
+  bool disponible = 9;
+  bool estado = 12;
+}
+
+message ActualizarDisponibilidadRequest {
+  int32 id = 1;
+  google.protobuf.BoolValue disponible = 2;
+}
+
+message ActualizarDisponibilidadResponse {
+  int32 affected = 1;
+}
+
+service ChoferesService {
+  rpc GetById (GetByIdRequest) returns (ChoferDto);
+  rpc ActualizarDisponibilidadChofer (ActualizarDisponibilidadRequest) returns (ActualizarDisponibilidadResponse);
+}

@@ -101,7 +101,10 @@ namespace MS.Choferes.Services
                 {
                     throw new RpcException(new Status(StatusCode.NotFound, "Chofer no encontrado"));
                 }
-                return new MS.Choferes.Protos.ChoferDto
+                
+                Console.WriteLine($"[MS.Choferes] GetById - Id: {c.Id}, Estado: {c.Estado}, Disponible: {c.Disponible}, Nombre: {c.NombreCompleto}");
+                
+                var dto = new MS.Choferes.Protos.ChoferDto
                 {
                     Id = c.Id,
                     PrimerNombre = c.PrimerNombre,
@@ -116,13 +119,18 @@ namespace MS.Choferes.Services
                     TipoMaquinariaId = c.TipoMaquinariaId,
                     Estado = c.Estado
                 };
+                
+                Console.WriteLine($"[MS.Choferes] DTO Creado - Estado: {dto.Estado}, Disponible: {dto.Disponible}");
+                
+                return dto;
             }
             catch (RpcException)
             {
                 throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"[MS.Choferes] Error: {ex.Message}");
                 throw new RpcException(new Status(StatusCode.Internal, "Error interno al buscar chofer"));
             }
         }
@@ -187,8 +195,7 @@ namespace MS.Choferes.Services
                         FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
                         Disponible = c.Disponible,
                         UsuarioId = c.UsuarioId,
-                        TipoMaquinariaId = c.TipoMaquinariaId,
-                        Estado = c.Estado
+                        TipoMaquinariaId = c.TipoMaquinariaId
                     });
                 }
             }
@@ -221,8 +228,7 @@ namespace MS.Choferes.Services
                         FechaNacimiento = c.FechaNacimiento.ToString("yyyy-MM-dd"),
                         Disponible = c.Disponible,
                         UsuarioId = c.UsuarioId,
-                        TipoMaquinariaId = c.TipoMaquinariaId,
-                        Estado = c.Estado
+                        TipoMaquinariaId = c.TipoMaquinariaId
                     });
                 }
             }
@@ -274,7 +280,7 @@ namespace MS.Choferes.Services
             {
                 if (request.ChoferId <= 0) throw new ArgumentException("ChoferId inválido");
                 if (request.UsuarioId <= 0) throw new ArgumentException("UsuarioId inválido");
-
+                
                 var affected = await _choferService.AsignarUsuarioAsync(request.ChoferId, request.UsuarioId);
                 return new AsignarUsuarioResponse { Affected = affected };
             }
