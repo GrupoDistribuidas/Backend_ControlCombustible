@@ -8,6 +8,7 @@ namespace MS.Vehiculos.Domain.Interfaces
         Task<int> CreateAsync(Vehiculo vehiculo);
         Task<Vehiculo?> GetByIdAsync(int id);
         Task<IEnumerable<Vehiculo>> GetAllAsync();
+        Task<IEnumerable<Vehiculo>> GetAllWithoutStateFilterAsync();
         Task<Vehiculo?> GetByPlacaAsync(string placa);
         Task<int> UpdateAsync(Vehiculo vehiculo, bool? estado = null);
         Task<IEnumerable<Vehiculo>> SearchAsync(MS.Vehiculos.Application.DTOs.VehiculoFilterDto filter);

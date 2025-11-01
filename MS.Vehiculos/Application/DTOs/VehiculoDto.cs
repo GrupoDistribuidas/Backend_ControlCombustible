@@ -11,5 +11,6 @@ namespace MS.Vehiculos.Application.DTOs
         public string Disponible { get; set; } = null!;
         public decimal ConsumoCombustibleKm { get; set; }
         public decimal CapacidadCombustible { get; set; }
+        public bool Estado { get; set; }
     }
 }

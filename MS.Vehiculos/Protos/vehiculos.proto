@@ -95,11 +95,13 @@ message VehiculoDto {
   string disponible = 7;
   double consumoCombustibleKm = 8;
   double capacidadCombustible = 9;
+  bool estado = 10;
 }
 
 service VehiculosService {
   rpc CrearVehiculo (CrearVehiculoRequest) returns (CrearVehiculoResponse);
   rpc ListarVehiculos (google.protobuf.Empty) returns (stream VehiculoDto);
+  rpc ListarTodosVehiculos (google.protobuf.Empty) returns (stream VehiculoDto);
   rpc GetById (GetByIdRequest) returns (VehiculoDto);
   rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
   rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
