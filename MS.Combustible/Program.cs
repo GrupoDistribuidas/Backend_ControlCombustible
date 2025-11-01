@@ -41,6 +41,8 @@ namespace MS.Combustible
             // Registrar repositorios
             builder.Services.AddScoped<IAsignacionRutaRepository, AsignacionRutaRepository>();
             builder.Services.AddScoped<IEstadoAsignacionRepository, EstadoAsignacionRepository>();
+            builder.Services.AddScoped<IRegistroConsumoRepository, RegistroConsumoRepository>();
+            builder.Services.AddScoped<IEstadoRegistroConsumoRepository, EstadoRegistroConsumoRepository>();
             
             // Configurar clientes gRPC para otros microservicios
             var choferesUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "https://localhost:5133";
@@ -61,8 +63,9 @@ namespace MS.Combustible
                 options.Address = new Uri(rutasUrl);
             });
             
-            // Registrar servicio de aplicación
+            // Registrar servicios de aplicación
             builder.Services.AddScoped<AsignacionRutaService>();
+            builder.Services.AddScoped<Application.Services.RegistroConsumoService>();
             
             // Agregar Swagger para documentación de la API
             builder.Services.AddEndpointsApiExplorer();
@@ -79,6 +82,7 @@ namespace MS.Combustible
 
             // Configurar gRPC
             app.MapGrpcService<AsignacionesGrpcService>();
+            app.MapGrpcService<RegistroConsumoGrpcService>();
 
             // Configurar controladores HTTP
             app.MapControllers();
