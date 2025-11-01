@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Combustible.Protos";
+
+package combustible;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+message CrearRegistroConsumoRequest {
+  int32 asignacionRutaId = 1;
+  google.protobuf.Timestamp fechaRegistro = 2;
+  double combustibleEstimado = 3;
+  double combustibleReal = 4;
+  string motivo = 5;
+  int32 estadoId = 6;
+}
+
+message CrearRegistroConsumoResponse {
+  int32 id = 1;
+}
+
+message ActualizarRegistroConsumoRequest {
+  int32 id = 1;
+  google.protobuf.Timestamp fechaRegistro = 2;
+  double combustibleEstimado = 3;
+  double combustibleReal = 4;
+  string motivo = 5;
+  int32 estadoId = 6;
+}
+
+message ActualizarRegistroConsumoResponse {
+  int32 affected = 1;
+}
+
+message GetRegistroConsumoByIdRequest {
+  int32 id = 1;
+}
+
+message GetRegistroConsumoByAsignacionRequest {
+  int32 asignacionRutaId = 1;
+}
+
+message GetRegistroConsumoByEstadoRequest {
+  int32 estadoId = 1;
+}
+
+message GetRegistroConsumoByFechaRangoRequest {
+  google.protobuf.Timestamp fechaInicio = 1;
+  google.protobuf.Timestamp fechaFin = 2;
+}
+
+message CambiarEstadoRegistroRequest {
+  int32 id = 1;
+  string nuevoEstado = 2;
+}
+
+message CambiarEstadoRegistroResponse {
+  int32 affected = 1;
+}
+
+message RegistroConsumoDto {
+  int32 id = 1;
+  int32 asignacionRutaId = 2;
+  google.protobuf.Timestamp fechaRegistro = 3;
+  double combustibleEstimado = 4;
+  double combustibleReal = 5;
+  string motivo = 6;
+  int32 estadoId = 7;
+  string estadoNombre = 8;
+  google.protobuf.Timestamp fechaCreacion = 9;
+  google.protobuf.Timestamp fechaModificacion = 10;
+}
+
+service RegistroConsumoService {
+  rpc CrearRegistroConsumo (CrearRegistroConsumoRequest) returns (CrearRegistroConsumoResponse);
+  rpc ActualizarRegistroConsumo (ActualizarRegistroConsumoRequest) returns (ActualizarRegistroConsumoResponse);
+  rpc GetById (GetRegistroConsumoByIdRequest) returns (RegistroConsumoDto);
+  rpc ListarTodos (google.protobuf.Empty) returns (stream RegistroConsumoDto);
+  rpc GetByAsignacionRutaId (GetRegistroConsumoByAsignacionRequest) returns (stream RegistroConsumoDto);
+  rpc GetByEstadoId (GetRegistroConsumoByEstadoRequest) returns (stream RegistroConsumoDto);
+  rpc GetByFechaRango (GetRegistroConsumoByFechaRangoRequest) returns (stream RegistroConsumoDto);
+  rpc CambiarEstado (CambiarEstadoRegistroRequest) returns (CambiarEstadoRegistroResponse);
+}

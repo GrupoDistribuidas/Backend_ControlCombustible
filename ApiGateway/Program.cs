@@ -106,9 +106,21 @@ Para obtener un token:
                 options.Address = new Uri(msAuthGrpcUrl);
             });
 
+            // Configurar cliente gRPC para UserService (MS.Autenticacion)
+            builder.Services.AddGrpcClient<MS.Autenticacion.Grpc.UserService.UserServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msAuthGrpcUrl);
+            });
+
             // Configurar cliente gRPC para MS.Vehiculos
             var msVehiculosGrpcUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "https://localhost:5135";
             builder.Services.AddGrpcClient<MS.Vehiculos.Protos.VehiculosService.VehiculosServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msVehiculosGrpcUrl);
+            });
+
+            // Configurar cliente gRPC para TiposService (MS.Vehiculos)
+            builder.Services.AddGrpcClient<MS.Vehiculos.Protos.TiposService.TiposServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msVehiculosGrpcUrl);
             });
@@ -121,14 +133,20 @@ Para obtener un token:
             });
 
             // Configurar cliente gRPC para MS.Rutas
-            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "https://localhost:5134";
+            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "https://localhost:5174";
             builder.Services.AddGrpcClient<MS.Rutas.Protos.RutasService.RutasServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msRutasGrpcUrl);
             });
 
-            // Configurar cliente gRPC para MS.Combustible (Asignaciones)
+            // Configurar cliente gRPC para MS.Combustible
             var msCombustibleGrpcUrl = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL") ?? "https://localhost:5136";
+            builder.Services.AddGrpcClient<MS.Combustible.Protos.RegistroConsumoService.RegistroConsumoServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msCombustibleGrpcUrl);
+            });
+
+            // Configurar cliente gRPC para MS.Combustible (Asignaciones)
             builder.Services.AddGrpcClient<MS.Combustible.Protos.AsignacionesService.AsignacionesServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msCombustibleGrpcUrl);

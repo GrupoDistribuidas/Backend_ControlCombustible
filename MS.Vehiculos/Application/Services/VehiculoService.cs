@@ -69,7 +69,26 @@ namespace MS.Vehiculos.Application.Services
                 TipoMaquinariaId = v.TipoMaquinariaId,
                 Disponible = v.Disponible,
                 ConsumoCombustibleKm = v.ConsumoCombustibleKm,
-                CapacidadCombustible = v.CapacidadCombustible
+                CapacidadCombustible = v.CapacidadCombustible,
+                Estado = v.Estado
+            });
+        }
+
+        public async Task<IEnumerable<VehiculoDto>> GetAllWithoutStateFilterAsync()
+        {
+            var list = await _repo.GetAllWithoutStateFilterAsync();
+            return list.Select(v => new VehiculoDto
+            {
+                Id = v.Id,
+                Nombre = v.Nombre,
+                Placa = v.Placa,
+                Marca = v.Marca,
+                Modelo = v.Modelo,
+                TipoMaquinariaId = v.TipoMaquinariaId,
+                Disponible = v.Disponible,
+                ConsumoCombustibleKm = v.ConsumoCombustibleKm,
+                CapacidadCombustible = v.CapacidadCombustible,
+                Estado = v.Estado
             });
         }
 
@@ -88,7 +107,8 @@ namespace MS.Vehiculos.Application.Services
                 TipoMaquinariaId = vehiculo.TipoMaquinariaId,
                 Disponible = vehiculo.Disponible,
                 ConsumoCombustibleKm = vehiculo.ConsumoCombustibleKm,
-                CapacidadCombustible = vehiculo.CapacidadCombustible
+                CapacidadCombustible = vehiculo.CapacidadCombustible,
+                Estado = vehiculo.Estado
             };
         }
 
@@ -182,7 +202,8 @@ namespace MS.Vehiculos.Application.Services
                 TipoMaquinariaId = v.TipoMaquinariaId,
                 Disponible = v.Disponible,
                 ConsumoCombustibleKm = v.ConsumoCombustibleKm,
-                CapacidadCombustible = v.CapacidadCombustible
+                CapacidadCombustible = v.CapacidadCombustible,
+                Estado = v.Estado
             });
         }
 
@@ -201,7 +222,8 @@ namespace MS.Vehiculos.Application.Services
                 TipoMaquinariaId = v.TipoMaquinariaId,
                 Disponible = v.Disponible,
                 ConsumoCombustibleKm = v.ConsumoCombustibleKm,
-                CapacidadCombustible = v.CapacidadCombustible
+                CapacidadCombustible = v.CapacidadCombustible,
+                Estado = v.Estado
             });
         }
     }
