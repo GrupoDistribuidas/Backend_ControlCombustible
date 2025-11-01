@@ -55,6 +55,7 @@ namespace MS.Combustible.Application.Services
                 var vehiculoRequest = new MS.Vehiculos.Protos.GetByIdRequest { Id = dto.VehiculoId };
                 var vehiculoResponse = await _vehiculosClient.GetByIdAsync(vehiculoRequest);
                 if (vehiculoResponse == null) throw new KeyNotFoundException($"Vehículo {dto.VehiculoId} no existe");
+                if (!vehiculoResponse.Estado) throw new InvalidOperationException("Vehículo inactivo");
                 if (!vehiculoResponse.Disponible.Equals("Disponible", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("Vehículo no disponible");
 
@@ -151,6 +152,7 @@ namespace MS.Combustible.Application.Services
                 var vehiculoRequest = new MS.Vehiculos.Protos.GetByIdRequest { Id = dto.VehiculoId };
                 var vehiculoResponse = await _vehiculosClient.GetByIdAsync(vehiculoRequest);
                 if (vehiculoResponse == null) throw new KeyNotFoundException($"Vehículo {dto.VehiculoId} no existe");
+                if (!vehiculoResponse.Estado) throw new InvalidOperationException("Vehículo inactivo");
                 if (!vehiculoResponse.Disponible.Equals("Disponible", StringComparison.OrdinalIgnoreCase) && 
                     dto.VehiculoId != existente.VehiculoId)
                     throw new InvalidOperationException("Vehículo no disponible");
