@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\asignaciones.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\registroconsumo.proto" GrpcServices="Server" />
     <Protobuf Include="Protos\choferes.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\vehiculos.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\rutas.proto" GrpcServices="Client" />
