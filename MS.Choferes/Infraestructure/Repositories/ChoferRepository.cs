@@ -312,5 +312,31 @@ SELECT LAST_INSERT_ID();";
             }
             return list;
         }
+
+        // ========== Métodos para Reportes ==========
+
+        public async Task<(int TotalActivos, int TotalInactivos, int TotalDisponibles, int TotalGeneral)> GetTotalChoferesActivosAsync()
+        {
+            var query = @"
+                SELECT 
+                    SUM(CASE WHEN Estado = 1 THEN 1 ELSE 0 END) as TotalActivos,
+                    SUM(CASE WHEN Estado = 0 THEN 1 ELSE 0 END) as TotalInactivos,
+                    SUM(CASE WHEN Estado = 1 AND Disponible = 1 THEN 1 ELSE 0 END) as TotalDisponibles,
+                    COUNT(*) as TotalGeneral
+                FROM Choferes";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            if (dataTable.Rows.Count > 0)
+            {
+                var row = dataTable.Rows[0];
+                return (
+                    Convert.ToInt32(row["TotalActivos"]),
+                    Convert.ToInt32(row["TotalInactivos"]),
+                    Convert.ToInt32(row["TotalDisponibles"]),
+                    Convert.ToInt32(row["TotalGeneral"])
+                );
+            }
+            return (0, 0, 0, 0);
+        }
     }
 }
