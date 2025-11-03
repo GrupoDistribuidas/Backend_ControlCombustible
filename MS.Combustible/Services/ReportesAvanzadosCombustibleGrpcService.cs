@@ -330,23 +330,68 @@ namespace MS.Combustible.Services
             }
         }
 
+        public override async Task GetAsignacionesPorEstado(Empty request, IServerStreamWriter<AsignacionPorEstadoDto> responseStream, ServerCallContext context)
+        {
+            try
+            {
+                _logger.LogInformation("Obteniendo asignaciones por estado (dinámico)");
+                var asignaciones = await _asignacionRutaRepository.GetAsignacionesPorEstadoAsync();
+
+                foreach (var (estadoNombre, totalAsignaciones, choferesAsignados, vehiculosAsignados) in asignaciones)
+                {
+                    await responseStream.WriteAsync(new AsignacionPorEstadoDto
+                    {
+                        EstadoNombre = estadoNombre,
+                        TotalAsignaciones = totalAsignaciones,
+                        ChoferesAsignados = choferesAsignados,
+                        VehiculosAsignados = vehiculosAsignados
+                    });
+                }
+
+                _logger.LogInformation("Asignaciones por estado obtenidas exitosamente: {Count} estados", asignaciones.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener asignaciones por estado");
+                throw new RpcException(new Status(StatusCode.Internal, "Error al obtener asignaciones por estado"));
+            }
+        }
+
+        [Obsolete("Este método está deprecated. Usar GetAsignacionesPorEstado en su lugar.")]
         public override async Task<AsignacionesActivasResponse> GetAsignacionesActivas(Empty request, ServerCallContext context)
         {
             try
             {
-                _logger.LogInformation("Obteniendo asignaciones activas");
-                var (totalActivas, totalPendientes, totalCompletadas, totalCanceladas, choferesEnRuta, vehiculosAsignados) = 
-                    await _asignacionRutaRepository.GetAsignacionesActivasAsync();
-
-                return new AsignacionesActivasResponse
+                _logger.LogWarning("GetAsignacionesActivas está deprecated. Use GetAsignacionesPorEstado para resultados dinámicos.");
+                
+                // Mantener compatibilidad hacia atrás usando el nuevo método dinámico
+                var asignaciones = await _asignacionRutaRepository.GetAsignacionesPorEstadoAsync();
+                
+                var response = new AsignacionesActivasResponse();
+                
+                foreach (var (estadoNombre, totalAsignaciones, choferesAsignados, vehiculosAsignados) in asignaciones)
                 {
-                    TotalAsignacionesActivas = totalActivas,
-                    TotalAsignacionesPendientes = totalPendientes,
-                    TotalAsignacionesCompletadas = totalCompletadas,
-                    TotalAsignacionesCanceladas = totalCanceladas,
-                    ChoferesEnRuta = choferesEnRuta,
-                    VehiculosAsignados = vehiculosAsignados
-                };
+                    // Mapear dinámicamente a la estructura antigua (best effort)
+                    switch (estadoNombre.ToLower())
+                    {
+                        case "asignada":
+                            response.TotalAsignacionesActivas = totalAsignaciones;
+                            break;
+                        case "en proceso":
+                            response.TotalAsignacionesPendientes = totalAsignaciones;
+                            response.ChoferesEnRuta = choferesAsignados;
+                            response.VehiculosAsignados = vehiculosAsignados;
+                            break;
+                        case "completada":
+                            response.TotalAsignacionesCompletadas = totalAsignaciones;
+                            break;
+                        case "cancelada":
+                            response.TotalAsignacionesCanceladas = totalAsignaciones;
+                            break;
+                    }
+                }
+
+                return response;
             }
             catch (Exception ex)
             {
