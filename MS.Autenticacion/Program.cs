@@ -18,11 +18,18 @@ namespace MS.Autenticacion
 
             var builder = WebApplication.CreateBuilder(args);
 
+            // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5001";
+            builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
+
             // Logging: Agrega para ver logs en consola (útil para debugging)
             builder.Logging.AddConsole();
 
             // Add services to the container.
             builder.Services.AddGrpc();
+
+            // Configure AppContext for gRPC insecure connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             // Agregar controladores para endpoints HTTP
             builder.Services.AddControllers();

@@ -13,21 +13,20 @@ namespace MS.Rutas
             
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure Kestrel to listen HTTPS/HTTP2 on a specific port for local gRPC testing
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                options.ListenLocalhost(5134, listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                    listenOptions.UseHttps();
-                });
-            });
+            // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5174";
+            builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
+
+
 
             // Add services to the container.
             builder.Services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = true;
             });
+
+            // Configure AppContext for gRPC insecure connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             // gRPC reflection
             builder.Services.AddGrpcReflection();
