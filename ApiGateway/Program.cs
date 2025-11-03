@@ -28,6 +28,9 @@ namespace ApiGateway
             // Agregar controladores
             builder.Services.AddControllers();
 
+            // Configure AppContext for gRPC insecure connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
             // ✅ Configurar Swagger/OpenAPI con autenticación JWT
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
@@ -113,7 +116,7 @@ Para obtener un token:
             });
 
             // Configurar cliente gRPC para MS.Vehiculos
-            var msVehiculosGrpcUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "https://localhost:5135";
+            var msVehiculosGrpcUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "http://localhost:5135";
             builder.Services.AddGrpcClient<MS.Vehiculos.Protos.VehiculosService.VehiculosServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msVehiculosGrpcUrl);
@@ -126,21 +129,27 @@ Para obtener un token:
             });
 
             // Configurar cliente gRPC para MS.Choferes
-            var msChoferesGrpcUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "https://localhost:5133";
+            var msChoferesGrpcUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "http://localhost:5133";
             builder.Services.AddGrpcClient<MS.Choferes.Protos.ChoferesService.ChoferesServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msChoferesGrpcUrl);
             });
 
             // Configurar cliente gRPC para MS.Rutas
-            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "https://localhost:5174";
+            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "http://localhost:5174";
             builder.Services.AddGrpcClient<MS.Rutas.Protos.RutasService.RutasServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msRutasGrpcUrl);
             });
 
+            // Configurar cliente gRPC para PuntosService (MS.Rutas)
+            builder.Services.AddGrpcClient<MS.Rutas.Protos.PuntosService.PuntosServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msRutasGrpcUrl);
+            });
+
             // Configurar cliente gRPC para MS.Combustible
-            var msCombustibleGrpcUrl = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL") ?? "https://localhost:5136";
+            var msCombustibleGrpcUrl = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL") ?? "http://localhost:5136";
             builder.Services.AddGrpcClient<MS.Combustible.Protos.RegistroConsumoService.RegistroConsumoServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msCombustibleGrpcUrl);

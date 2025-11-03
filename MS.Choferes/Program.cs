@@ -13,21 +13,18 @@ namespace MS.Choferes
             
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure Kestrel to listen HTTPS/HTTP2 on localhost:5133 for local gRPC testing
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                options.ListenLocalhost(5133, listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                    listenOptions.UseHttps();
-                });
-            });
+            // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5133";
+            builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
 
             // Add services to the container.
             builder.Services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = true;
             });
+
+            // Configure AppContext for gRPC insecure connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             // gRPC reflection
             builder.Services.AddGrpcReflection();
@@ -39,7 +36,7 @@ namespace MS.Choferes
             builder.Services.AddScoped<IDatabaseService, DatabaseService>();
             
             // Configurar cliente gRPC para MS.Autenticacion (validar usuarios)
-            var authServiceUrl = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL") ?? "https://localhost:5235";
+            var authServiceUrl = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL") ?? "http://localhost:5001";
             builder.Services.AddGrpcClient<MS.Autenticacion.Grpc.UserService.UserServiceClient>(options =>
             {
                 options.Address = new Uri(authServiceUrl);

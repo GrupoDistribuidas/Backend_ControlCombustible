@@ -13,22 +13,18 @@ namespace MS.Vehiculos
             
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure Kestrel to listen HTTPS/HTTP2 on localhost:5135 for quick local gRPC testing
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                // Ensure HTTP/2 is used and HTTPS enabled on port 5135
-                options.ListenLocalhost(5135, listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                    listenOptions.UseHttps(); // will use the dev certificate in Development
-                });
-            });
+            // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5135";
+            builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
 
             // Add services to the container.
             builder.Services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = true;
             });
+
+            // Configure AppContext for gRPC insecure connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             // gRPC reflection (helps Postman / tooling discover services)
             builder.Services.AddGrpcReflection();

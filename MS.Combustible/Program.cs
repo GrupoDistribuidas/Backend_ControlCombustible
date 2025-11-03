@@ -16,21 +16,18 @@ namespace MS.Combustible
             
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure Kestrel to listen HTTPS/HTTP2 on localhost:5136 for local gRPC testing
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                options.ListenLocalhost(5136, listenOptions =>
-                {
-                    listenOptions.Protocols = HttpProtocols.Http2;
-                    listenOptions.UseHttps();
-                });
-            });
+            // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5136";
+            builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
 
             // Add services to the container.
             builder.Services.AddGrpc(options =>
             {
                 options.EnableDetailedErrors = true;
             });
+
+            // Configure AppContext for gRPC insecure connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             // Agregar controladores para endpoints HTTP
             builder.Services.AddControllers();
@@ -45,19 +42,19 @@ namespace MS.Combustible
             builder.Services.AddScoped<IEstadoRegistroConsumoRepository, EstadoRegistroConsumoRepository>();
             
             // Configurar clientes gRPC para otros microservicios
-            var choferesUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "https://localhost:5133";
+            var choferesUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "http://localhost:5133";
             builder.Services.AddGrpcClient<MS.Choferes.Protos.ChoferesService.ChoferesServiceClient>(options =>
             {
                 options.Address = new Uri(choferesUrl);
             });
 
-            var vehiculosUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "https://localhost:5135";
+            var vehiculosUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "http://localhost:5135";
             builder.Services.AddGrpcClient<MS.Vehiculos.Protos.VehiculosService.VehiculosServiceClient>(options =>
             {
                 options.Address = new Uri(vehiculosUrl);
             });
 
-            var rutasUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "https://localhost:5134";
+            var rutasUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "http://localhost:5174";
             builder.Services.AddGrpcClient<MS.Rutas.Protos.RutasService.RutasServiceClient>(options =>
             {
                 options.Address = new Uri(rutasUrl);
@@ -87,7 +84,7 @@ namespace MS.Combustible
             // Configurar controladores HTTP
             app.MapControllers();
             
-            app.MapGet("/", () => "Microservicio de Combustible - gRPC endpoint disponible en https://localhost:5136");
+            app.MapGet("/", () => "Microservicio de Combustible - gRPC endpoint disponible en http://localhost:5136");
 
             app.Run();
         }
