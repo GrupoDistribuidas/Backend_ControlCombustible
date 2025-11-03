@@ -30,6 +30,14 @@
     <Protobuf Include="Protos\puntos.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\asignaciones.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\registroconsumo.proto" GrpcServices="Client" />
+    <!-- Protos de Reportes -->
+    <Protobuf Include="Protos\reportes-combustible.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\reportes-vehiculos.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\reportes-choferes.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\reportes-rutas.proto" GrpcServices="Client" />
+    <!-- Protos de Reportes Avanzados -->
+    <Protobuf Include="Protos\reportes-avanzados-combustible.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\reportes-avanzados-rutas.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

@@ -161,6 +161,46 @@ Para obtener un token:
                 options.Address = new Uri(msCombustibleGrpcUrl);
             });
 
+            // ========== Clientes gRPC para Servicios de Reportes ==========
+
+            // Cliente para reportes de combustible
+            builder.Services.AddGrpcClient<MS.Combustible.Protos.ReportesService.ReportesServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msCombustibleGrpcUrl);
+            });
+
+            // Cliente para reportes de vehículos
+            builder.Services.AddGrpcClient<MS.Vehiculos.Protos.ReportesVehiculosService.ReportesVehiculosServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msVehiculosGrpcUrl);
+            });
+
+            // Cliente para reportes de choferes
+            builder.Services.AddGrpcClient<MS.Choferes.Protos.ReportesChoferesService.ReportesChoferesServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msChoferesGrpcUrl);
+            });
+
+            // Cliente para reportes de rutas
+            builder.Services.AddGrpcClient<MS.Rutas.Protos.ReportesRutasService.ReportesRutasServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msRutasGrpcUrl);
+            });
+
+            // ========== Clientes gRPC para Servicios de Reportes Avanzados ==========
+
+            // Cliente para reportes avanzados de combustible
+            builder.Services.AddGrpcClient<MS.Combustible.Protos.ReportesAvanzadosCombustibleService.ReportesAvanzadosCombustibleServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msCombustibleGrpcUrl);
+            });
+
+            // Cliente para reportes avanzados de rutas
+            builder.Services.AddGrpcClient<MS.Rutas.Protos.ReportesAvanzadosRutasService.ReportesAvanzadosRutasServiceClient>((provider, options) =>
+            {
+                options.Address = new Uri(msRutasGrpcUrl);
+            });
+
             // 🔑 Configuración JWT
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET no configurado en .env");
             var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "MS.Autenticacion";
