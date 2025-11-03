@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Rutas.Protos";
+
+package rutas;
+
+import "google/protobuf/empty.proto";
+
+// ========== Servicios de Reportes de Rutas ==========
+service ReportesRutasService {
+  // KPIs
+  rpc GetTotalRutasActivas(google.protobuf.Empty) returns (TotalRutasActivasResponse);
+}
+
+// ========== Mensajes de Respuesta ==========
+
+message TotalRutasActivasResponse {
+  int32 totalActivas = 1;
+  int32 totalInactivas = 2;
+  int32 totalGeneral = 3;
+  double distanciaTotal = 4;
+}

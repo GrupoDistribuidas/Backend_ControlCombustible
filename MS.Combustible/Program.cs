@@ -80,6 +80,8 @@ namespace MS.Combustible
             // Configurar gRPC
             app.MapGrpcService<AsignacionesGrpcService>();
             app.MapGrpcService<RegistroConsumoGrpcService>();
+            app.MapGrpcService<MS.Combustible.Services.ReportesGrpcService>();
+            app.MapGrpcService<MS.Combustible.Services.ReportesAvanzadosCombustibleGrpcService>();
 
             // Configurar controladores HTTP
             app.MapControllers();

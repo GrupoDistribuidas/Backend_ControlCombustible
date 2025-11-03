@@ -17,5 +17,8 @@ namespace MS.Choferes.Domain.Interfaces
         Task<int> UpdateUsuarioAsync(int choferId, int usuarioId);
         Task<IEnumerable<Chofer>> SearchAsync(MS.Choferes.Application.DTOs.ChoferFilterDto filter);
         Task<IEnumerable<Chofer>> SearchByTermAsync(string term);
+
+        // Métodos para reportes
+        Task<(int TotalActivos, int TotalInactivos, int TotalDisponibles, int TotalGeneral)> GetTotalChoferesActivosAsync();
     }
 }

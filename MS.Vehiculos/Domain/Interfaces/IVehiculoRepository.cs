@@ -13,5 +13,10 @@ namespace MS.Vehiculos.Domain.Interfaces
         Task<int> UpdateAsync(Vehiculo vehiculo, bool? estado = null);
         Task<IEnumerable<Vehiculo>> SearchAsync(MS.Vehiculos.Application.DTOs.VehiculoFilterDto filter);
         Task<IEnumerable<Vehiculo>> SearchByTermAsync(string term);
+
+        // Métodos para reportes
+        Task<(int TotalActivos, int TotalInactivos, int TotalGeneral)> GetTotalVehiculosActivosAsync();
+        Task<List<(int TipoId, string TipoNombre, int Cantidad)>> GetVehiculosPorTipoAsync();
+        Task<List<(string Disponibilidad, int Cantidad)>> GetVehiculosPorEstadoAsync();
     }
 }

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Choferes.Protos";
+
+package choferes;
+
+import "google/protobuf/empty.proto";
+
+// ========== Servicios de Reportes de Choferes ==========
+service ReportesChoferesService {
+  // KPIs
+  rpc GetTotalChoferesActivos(google.protobuf.Empty) returns (TotalChoferesActivosResponse);
+}
+
+// ========== Mensajes de Respuesta ==========
+
+message TotalChoferesActivosResponse {
+  int32 totalActivos = 1;
+  int32 totalInactivos = 2;
+  int32 totalDisponibles = 3;
+  int32 totalGeneral = 4;
+}

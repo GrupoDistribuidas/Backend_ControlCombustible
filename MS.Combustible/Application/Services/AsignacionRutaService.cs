@@ -64,9 +64,17 @@ namespace MS.Combustible.Application.Services
                 if (rutaResponse == null) throw new KeyNotFoundException($"Ruta {dto.RutaId} no existe");
                 if (!rutaResponse.Estado) throw new InvalidOperationException("Ruta no habilitada");
 
+                // Obtener IDs de estados dinámicamente
+                var estadoAsignadaId = await _asignacionRepo.GetEstadoIdByNombreAsync("Asignada");
+                var estadoEnProcesoId = await _asignacionRepo.GetEstadoIdByNombreAsync("En Proceso");
+                
+                if (estadoAsignadaId == null || estadoEnProcesoId == null)
+                    throw new InvalidOperationException("Estados 'Asignada' o 'En Proceso' no están configurados en la base de datos");
+
                 var asignaciones = await _asignacionRepo.GetByVehiculoIdAsync(dto.VehiculoId);
                 var conflicto = asignaciones.FirstOrDefault(a => 
-                    a.FechaAsignacion.Date == dto.FechaAsignacion.Date && (a.EstadoId == 1 || a.EstadoId == 2));
+                    a.FechaAsignacion.Date == dto.FechaAsignacion.Date && 
+                    (a.EstadoId == estadoAsignadaId.Value || a.EstadoId == estadoEnProcesoId.Value));
                 if (conflicto != null) throw new InvalidOperationException("Vehículo ya asignado en esa fecha");
 
                 double combustibleEstimado = (rutaResponse.Distancia * vehiculoResponse.ConsumoCombustibleKm) / 100;
@@ -78,7 +86,7 @@ namespace MS.Combustible.Application.Services
                     RutaId = dto.RutaId,
                     FechaAsignacion = dto.FechaAsignacion,
                     CombustibleEstimado = combustibleEstimado,
-                    EstadoId = 1
+                    EstadoId = estadoAsignadaId.Value
                 };
 
                 var asignacionId = await _asignacionRepo.CreateAsync(asignacion);
@@ -164,11 +172,18 @@ namespace MS.Combustible.Application.Services
 
                 if (dto.VehiculoId != existente.VehiculoId)
                 {
+                    // Obtener IDs de estados dinámicamente
+                    var estadoAsignadaId = await _asignacionRepo.GetEstadoIdByNombreAsync("Asignada");
+                    var estadoEnProcesoId = await _asignacionRepo.GetEstadoIdByNombreAsync("En Proceso");
+                    
+                    if (estadoAsignadaId == null || estadoEnProcesoId == null)
+                        throw new InvalidOperationException("Estados 'Asignada' o 'En Proceso' no están configurados en la base de datos");
+
                     var asignaciones = await _asignacionRepo.GetByVehiculoIdAsync(dto.VehiculoId);
                     var conflicto = asignaciones.FirstOrDefault(a => 
                         a.Id != dto.Id &&
                         a.FechaAsignacion.Date == dto.FechaAsignacion.Date && 
-                        (a.EstadoId == 1 || a.EstadoId == 2));
+                        (a.EstadoId == estadoAsignadaId.Value || a.EstadoId == estadoEnProcesoId.Value));
                     if (conflicto != null)
                         throw new InvalidOperationException("Vehículo ya asignado en esa fecha");
                 }

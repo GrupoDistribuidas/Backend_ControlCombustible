@@ -132,5 +132,85 @@ WHERE Id = @Id;";
             }
             return list;
         }
+
+        // ========== Métodos para Reportes Avanzados ==========
+
+        public async Task<List<(string TipoPunto, int Cantidad, string ProvinciaPrincipal)>> GetPuntosPorTipoAsync()
+        {
+            var query = @"
+                SELECT 
+                    TipoPunto,
+                    COUNT(*) as Cantidad,
+                    (SELECT Provincia 
+                     FROM Puntos p2 
+                     WHERE p2.TipoPunto = p.TipoPunto 
+                     GROUP BY Provincia 
+                     ORDER BY COUNT(*) DESC 
+                     LIMIT 1) as ProvinciaPrincipal
+                FROM Puntos p
+                GROUP BY TipoPunto
+                ORDER BY Cantidad DESC";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(string, int, string)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    row["TipoPunto"]?.ToString() ?? "Desconocido",
+                    Convert.ToInt32(row["Cantidad"]),
+                    row["ProvinciaPrincipal"]?.ToString() ?? "N/A"
+                ));
+            }
+
+            return resultado;
+        }
+
+        public async Task<List<(int PuntoId, string NombrePunto, string Provincia, string TipoPunto, int VecesComoInicio, int VecesComoFin, int TotalUsos)>> GetPuntosMasUtilizadosAsync()
+        {
+            var query = @"
+                SELECT 
+                    p.Id as PuntoId,
+                    p.Nombre as NombrePunto,
+                    p.Provincia,
+                    p.TipoPunto,
+                    COALESCE(inicio.VecesComoInicio, 0) as VecesComoInicio,
+                    COALESCE(fin.VecesComoFin, 0) as VecesComoFin,
+                    (COALESCE(inicio.VecesComoInicio, 0) + COALESCE(fin.VecesComoFin, 0)) as TotalUsos
+                FROM Puntos p
+                LEFT JOIN (
+                    SELECT PuntoInicioId, COUNT(*) as VecesComoInicio
+                    FROM Rutas
+                    WHERE Estado = 1
+                    GROUP BY PuntoInicioId
+                ) inicio ON p.Id = inicio.PuntoInicioId
+                LEFT JOIN (
+                    SELECT PuntoFinId, COUNT(*) as VecesComoFin
+                    FROM Rutas
+                    WHERE Estado = 1
+                    GROUP BY PuntoFinId
+                ) fin ON p.Id = fin.PuntoFinId
+                HAVING TotalUsos > 0
+                ORDER BY TotalUsos DESC
+                LIMIT 20";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, string, string, string, int, int, int)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["PuntoId"]),
+                    row["NombrePunto"]?.ToString() ?? "Sin nombre",
+                    row["Provincia"]?.ToString() ?? "Sin provincia",
+                    row["TipoPunto"]?.ToString() ?? "Desconocido",
+                    Convert.ToInt32(row["VecesComoInicio"]),
+                    Convert.ToInt32(row["VecesComoFin"]),
+                    Convert.ToInt32(row["TotalUsos"])
+                ));
+            }
+
+            return resultado;
+        }
     }
 }

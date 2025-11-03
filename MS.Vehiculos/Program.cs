@@ -64,6 +64,7 @@ namespace MS.Vehiculos
             // Configurar gRPC
             app.MapGrpcService<MS.Vehiculos.Services.VehiculosGrpcService>();
             app.MapGrpcService<MS.Vehiculos.Services.TiposGrpcService>();
+            app.MapGrpcService<MS.Vehiculos.Services.ReportesVehiculosGrpcService>();
             // Mapear reflection solo en entornos de desarrollo
             if (app.Environment.IsDevelopment())
             {

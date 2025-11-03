@@ -4,7 +4,17 @@ option csharp_namespace = "MS.Rutas.Protos";
 
 package rutas;
 
-message GetByIdRequest { 
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message CrearRutaRequest {
+  string nombre = 1;
+  int32 puntoInicioId = 2;
+  int32 puntoFinId = 3;
+  double distancia = 4;
+}
+
+message CrearRutaResponse { 
   int32 id = 1; 
 }
 
@@ -17,6 +27,42 @@ message RutaDto {
   bool estado = 6;
 }
 
+message ActualizarRutaRequest {
+  int32 id = 1;
+  string nombre = 2;
+  int32 puntoInicioId = 3;
+  int32 puntoFinId = 4;
+  double distancia = 5;
+  google.protobuf.BoolValue estado = 6;
+}
+
+message ActualizarRutaResponse { 
+  int32 affected = 1; 
+}
+
+message GetByIdRequest { 
+  int32 id = 1; 
+}
+
+message ActualizarEstadoRequest { 
+  int32 id = 1; 
+  bool estado = 2; 
+}
+
+message ActualizarEstadoResponse { 
+  int32 affected = 1; 
+}
+
+message SearchByTermRequest { 
+  string term = 1; 
+}
+
 service RutasService {
+  rpc CrearRuta (CrearRutaRequest) returns (CrearRutaResponse);
+  rpc ListarRutas (google.protobuf.Empty) returns (stream RutaDto);
+  rpc ListarTodasRutas (google.protobuf.Empty) returns (stream RutaDto);
   rpc GetById (GetByIdRequest) returns (RutaDto);
+  rpc ActualizarRuta (ActualizarRutaRequest) returns (ActualizarRutaResponse);
+  rpc ActualizarEstadoRuta (ActualizarEstadoRequest) returns (ActualizarEstadoResponse);
+  rpc SearchByTerm (SearchByTermRequest) returns (stream RutaDto);
 }

@@ -200,5 +200,62 @@ namespace MS.Combustible.Infrastructure.Repositories
                 FechaModificacion = Convert.ToDateTime(row["FechaModificacion"])
             };
         }
+
+        // ========== Métodos Auxiliares para Estados Dinámicos ==========
+
+        public async Task<int?> GetEstadoIdByNombreAsync(string nombreEstado)
+        {
+            var query = "SELECT Id FROM estadosasignacion WHERE Nombre = @Nombre LIMIT 1";
+            var parameters = new Dictionary<string, object> { { "@Nombre", nombreEstado } };
+            
+            var dt = await _db.ExecuteQueryAsync(query, parameters);
+            
+            if (dt.Rows.Count == 0) return null;
+            
+            return Convert.ToInt32(dt.Rows[0]["Id"]);
+        }
+
+        public async Task<string?> GetEstadoNombreByIdAsync(int estadoId)
+        {
+            var query = "SELECT Nombre FROM estadosasignacion WHERE Id = @Id LIMIT 1";
+            var parameters = new Dictionary<string, object> { { "@Id", estadoId } };
+            
+            var dt = await _db.ExecuteQueryAsync(query, parameters);
+            
+            if (dt.Rows.Count == 0) return null;
+            
+            return dt.Rows[0]["Nombre"]?.ToString();
+        }
+
+        // ========== Métodos para Reportes Avanzados ==========
+
+        public async Task<List<(string EstadoNombre, int TotalAsignaciones, int ChoferesAsignados, int VehiculosAsignados)>> GetAsignacionesPorEstadoAsync()
+        {
+            var query = @"
+                SELECT 
+                    e.Nombre as EstadoNombre,
+                    COUNT(DISTINCT a.Id) as TotalAsignaciones,
+                    COUNT(DISTINCT a.ChoferId) as ChoferesAsignados,
+                    COUNT(DISTINCT a.VehiculoId) as VehiculosAsignados
+                FROM estadosasignacion e
+                LEFT JOIN asignacionesrutas a ON a.EstadoId = e.Id
+                GROUP BY e.Id, e.Nombre
+                ORDER BY e.Id";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultados = new List<(string, int, int, int)>();
+            
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultados.Add((
+                    row["EstadoNombre"]?.ToString() ?? "Desconocido",
+                    row["TotalAsignaciones"] != DBNull.Value ? Convert.ToInt32(row["TotalAsignaciones"]) : 0,
+                    row["ChoferesAsignados"] != DBNull.Value ? Convert.ToInt32(row["ChoferesAsignados"]) : 0,
+                    row["VehiculosAsignados"] != DBNull.Value ? Convert.ToInt32(row["VehiculosAsignados"]) : 0
+                ));
+            }
+            
+            return resultados;
+        }
     }
 }
