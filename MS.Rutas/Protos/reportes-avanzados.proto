@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Rutas.Protos";
+
+package rutas;
+
+import "google/protobuf/empty.proto";
+
+// ========== Servicios de Reportes Avanzados de Rutas ==========
+service ReportesAvanzadosRutasService {
+  // Reportes geográficos
+  rpc GetRutasPorProvincia(google.protobuf.Empty) returns (stream RutasPorProvinciaDto);
+  rpc GetPuntosPorTipo(google.protobuf.Empty) returns (stream PuntosPorTipoDto);
+  rpc GetPuntosMasUtilizados(google.protobuf.Empty) returns (stream PuntoMasUtilizadoDto);
+}
+
+// ========== Mensajes de Respuesta ==========
+
+message RutasPorProvinciaDto {
+  string provincia = 1;
+  int32 totalRutas = 2;
+  double distanciaTotal = 3;
+  int32 rutasActivas = 4;
+  int32 rutasInactivas = 5;
+}
+
+message PuntosPorTipoDto {
+  string tipoPunto = 1; // Terminal, Depot, Estacion, Puerto, Almacen, Distribuidor
+  int32 cantidad = 2;
+  string provinciaPrincipal = 3;
+}
+
+message PuntoMasUtilizadoDto {
+  int32 puntoId = 1;
+  string nombrePunto = 2;
+  string provincia = 3;
+  string tipoPunto = 4;
+  int32 vecesComoInicio = 5;
+  int32 vecesComoFin = 6;
+  int32 totalUsos = 7;
+}
