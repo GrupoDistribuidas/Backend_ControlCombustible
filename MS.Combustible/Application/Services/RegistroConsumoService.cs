@@ -29,7 +29,7 @@ namespace MS.Combustible.Application.Services
         /// <summary>
         /// Crea un registro de consumo y automáticamente marca la asignación como "Completada",
         /// liberando los recursos (chofer y vehículo) asociados.
-        /// Solo permite crear registros para asignaciones en estado "En Proceso" (EstadoId = 2).
+        /// Solo permite crear registros para asignaciones en estado "En Proceso".
         /// </summary>
         public async Task<int> CrearRegistroConsumoAsync(CrearRegistroConsumoDto dto)
         {
@@ -50,9 +50,13 @@ namespace MS.Combustible.Application.Services
                     throw new KeyNotFoundException($"Asignación de ruta {dto.AsignacionRutaId} no existe");
 
                 // Verificar que la asignación esté en estado válido para crear registro (debe estar "En Proceso")
-                // Estados válidos: 1=Asignada, 2=En Proceso - solo permitir crear registro si está "En Proceso"
-                if (asignacion.EstadoId != 2)
-                    throw new InvalidOperationException($"Solo se pueden crear registros de consumo para asignaciones 'En Proceso'. Estado actual: {asignacion.EstadoId}");
+                var estadoEnProcesoId = await _asignacionRepo.GetEstadoIdByNombreAsync("En Proceso");
+                if (estadoEnProcesoId == null)
+                    throw new InvalidOperationException("Estado 'En Proceso' no está configurado en la base de datos");
+                
+                var estadoNombreActual = await _asignacionRepo.GetEstadoNombreByIdAsync(asignacion.EstadoId);
+                if (asignacion.EstadoId != estadoEnProcesoId.Value)
+                    throw new InvalidOperationException($"Solo se pueden crear registros de consumo para asignaciones 'En Proceso'. Estado actual: {estadoNombreActual ?? asignacion.EstadoId.ToString()}");
 
                 // Verificar que no existe un registro previo para esta asignación
                 var registroExistente = await _registroRepo.ExistsByAsignacionRutaIdAsync(dto.AsignacionRutaId);

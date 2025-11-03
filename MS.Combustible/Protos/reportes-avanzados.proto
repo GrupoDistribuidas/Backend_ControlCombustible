@@ -13,6 +13,11 @@ service ReportesAvanzadosCombustibleService {
   rpc GetDesviacionesCombustible(google.protobuf.Empty) returns (stream DesviacionCombustibleDto);
   rpc GetVehiculosMasEficientes(TopVehiculosRequest) returns (stream VehiculoEficienciaDto);
   rpc GetVehiculosMenosEficientes(TopVehiculosRequest) returns (stream VehiculoEficienciaDto);
+  
+  // Reporte dinámico de asignaciones por estado
+  rpc GetAsignacionesPorEstado(google.protobuf.Empty) returns (stream AsignacionPorEstadoDto);
+  
+  // DEPRECATED: Usar GetAsignacionesPorEstado en su lugar
   rpc GetAsignacionesActivas(google.protobuf.Empty) returns (AsignacionesActivasResponse);
 }
 
@@ -59,6 +64,15 @@ message VehiculoEficienciaDto {
   double ahorroCombustible = 8; // Estimado - Real (positivo = ahorro)
 }
 
+// Mensaje dinámico para asignaciones por estado
+message AsignacionPorEstadoDto {
+  string estadoNombre = 1;
+  int32 totalAsignaciones = 2;
+  int32 choferesAsignados = 3;
+  int32 vehiculosAsignados = 4;
+}
+
+// DEPRECATED: Usar GetAsignacionesPorEstado en su lugar
 message AsignacionesActivasResponse {
   int32 totalAsignacionesActivas = 1;
   int32 totalAsignacionesPendientes = 2;

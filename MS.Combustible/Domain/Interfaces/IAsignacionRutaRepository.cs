@@ -15,5 +15,12 @@ namespace MS.Combustible.Domain.Interfaces
         Task<IEnumerable<AsignacionRuta>> GetByEstadoIdAsync(int estadoId);
         Task<int> UpdateAsync(AsignacionRuta asignacion);
         Task<int> UpdateEstadoAsync(int id, int estadoId);
+        
+        // Métodos auxiliares para obtener IDs de estados dinámicamente
+        Task<int?> GetEstadoIdByNombreAsync(string nombreEstado);
+        Task<string?> GetEstadoNombreByIdAsync(int estadoId);
+        
+        // Métodos para reportes avanzados - totalmente dinámico
+        Task<List<(string EstadoNombre, int TotalAsignaciones, int ChoferesAsignados, int VehiculosAsignados)>> GetAsignacionesPorEstadoAsync();
     }
 }
