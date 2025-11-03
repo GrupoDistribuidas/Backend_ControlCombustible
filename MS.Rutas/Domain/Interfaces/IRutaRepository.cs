@@ -13,5 +13,11 @@ namespace MS.Rutas.Domain.Interfaces
         Task<int> UpdateAsync(Ruta ruta, bool? estado = null);
         Task<int> UpdateEstadoAsync(int id, bool estado);
         Task<IEnumerable<Ruta>> SearchByTermAsync(string term);
+
+        // Métodos para reportes
+        Task<(int TotalActivas, int TotalInactivas, int TotalGeneral, double DistanciaTotal)> GetTotalRutasActivasAsync();
+        
+        // Métodos para reportes avanzados
+        Task<List<(string Provincia, int TotalRutas, double DistanciaTotal, int RutasActivas, int RutasInactivas)>> GetRutasPorProvinciaAsync();
     }
 }

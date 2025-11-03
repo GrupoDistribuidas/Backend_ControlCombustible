@@ -178,5 +178,62 @@ SELECT LAST_INSERT_ID();";
             }
             return list;
         }
+
+        // ========== Métodos para Reportes ==========
+
+        public async Task<(int TotalActivas, int TotalInactivas, int TotalGeneral, double DistanciaTotal)> GetTotalRutasActivasAsync()
+        {
+            var query = @"
+                SELECT 
+                    SUM(CASE WHEN Estado = 1 THEN 1 ELSE 0 END) as TotalActivas,
+                    SUM(CASE WHEN Estado = 0 THEN 1 ELSE 0 END) as TotalInactivas,
+                    COUNT(*) as TotalGeneral,
+                    SUM(CASE WHEN Estado = 1 THEN Distancia ELSE 0 END) as DistanciaTotal
+                FROM Rutas";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            if (dataTable.Rows.Count > 0)
+            {
+                var row = dataTable.Rows[0];
+                return (
+                    Convert.ToInt32(row["TotalActivas"]),
+                    Convert.ToInt32(row["TotalInactivas"]),
+                    Convert.ToInt32(row["TotalGeneral"]),
+                    Convert.ToDouble(row["DistanciaTotal"])
+                );
+            }
+            return (0, 0, 0, 0.0);
+        }
+
+        public async Task<List<(string Provincia, int TotalRutas, double DistanciaTotal, int RutasActivas, int RutasInactivas)>> GetRutasPorProvinciaAsync()
+        {
+            var query = @"
+                SELECT 
+                    p.Provincia,
+                    COUNT(DISTINCT r.Id) as TotalRutas,
+                    SUM(r.Distancia) as DistanciaTotal,
+                    SUM(CASE WHEN r.Estado = 1 THEN 1 ELSE 0 END) as RutasActivas,
+                    SUM(CASE WHEN r.Estado = 0 THEN 1 ELSE 0 END) as RutasInactivas
+                FROM Rutas r
+                INNER JOIN Puntos p ON (r.PuntoInicioId = p.Id OR r.PuntoFinId = p.Id)
+                GROUP BY p.Provincia
+                ORDER BY TotalRutas DESC, DistanciaTotal DESC";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(string, int, double, int, int)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    row["Provincia"]?.ToString() ?? "Sin provincia",
+                    Convert.ToInt32(row["TotalRutas"]),
+                    Convert.ToDouble(row["DistanciaTotal"]),
+                    Convert.ToInt32(row["RutasActivas"]),
+                    Convert.ToInt32(row["RutasInactivas"])
+                ));
+            }
+
+            return resultado;
+        }
     }
 }
