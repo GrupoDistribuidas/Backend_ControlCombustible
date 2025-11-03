@@ -61,6 +61,8 @@ namespace MS.Rutas
             // Configurar gRPC Services
             app.MapGrpcService<MS.Rutas.Services.RutasGrpcService>();
             app.MapGrpcService<MS.Rutas.Services.PuntosGrpcService>();
+            app.MapGrpcService<MS.Rutas.Services.ReportesRutasGrpcService>();
+            app.MapGrpcService<MS.Rutas.Services.ReportesAvanzadosRutasGrpcService>();
             
             // Mapear reflection solo en desarrollo
             if (app.Environment.IsDevelopment())
