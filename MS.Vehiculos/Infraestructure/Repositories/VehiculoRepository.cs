@@ -258,5 +258,81 @@ SELECT LAST_INSERT_ID();";
             }
             return list;
         }
+
+        // ========== Métodos para Reportes ==========
+
+        public async Task<(int TotalActivos, int TotalInactivos, int TotalGeneral)> GetTotalVehiculosActivosAsync()
+        {
+            var query = @"
+                SELECT 
+                    SUM(CASE WHEN Estado = 1 THEN 1 ELSE 0 END) as TotalActivos,
+                    SUM(CASE WHEN Estado = 0 THEN 1 ELSE 0 END) as TotalInactivos,
+                    COUNT(*) as TotalGeneral
+                FROM Vehiculos";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            if (dataTable.Rows.Count > 0)
+            {
+                var row = dataTable.Rows[0];
+                return (
+                    Convert.ToInt32(row["TotalActivos"]),
+                    Convert.ToInt32(row["TotalInactivos"]),
+                    Convert.ToInt32(row["TotalGeneral"])
+                );
+            }
+            return (0, 0, 0);
+        }
+
+        public async Task<List<(int TipoId, string TipoNombre, int Cantidad)>> GetVehiculosPorTipoAsync()
+        {
+            var query = @"
+                SELECT 
+                    v.TipoMaquinariaId,
+                    t.Nombre as TipoNombre,
+                    COUNT(v.Id) as Cantidad
+                FROM Vehiculos v
+                INNER JOIN TipoMaquinaria t ON v.TipoMaquinariaId = t.Id
+                GROUP BY v.TipoMaquinariaId, t.Nombre
+                ORDER BY Cantidad DESC";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, string, int)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["TipoMaquinariaId"]),
+                    row["TipoNombre"]?.ToString() ?? "Sin nombre",
+                    Convert.ToInt32(row["Cantidad"])
+                ));
+            }
+
+            return resultado;
+        }
+
+        public async Task<List<(string Disponibilidad, int Cantidad)>> GetVehiculosPorEstadoAsync()
+        {
+            var query = @"
+                SELECT 
+                    Disponible as Disponibilidad,
+                    COUNT(*) as Cantidad
+                FROM Vehiculos
+                WHERE Estado = 1
+                GROUP BY Disponible
+                ORDER BY Cantidad DESC";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(string, int)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    row["Disponibilidad"]?.ToString() ?? "Desconocido",
+                    Convert.ToInt32(row["Cantidad"])
+                ));
+            }
+
+            return resultado;
+        }
     }
 }
