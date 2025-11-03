@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Combustible.Protos";
+
+package combustible;
+
+import "google/protobuf/empty.proto";
+
+// ========== Servicios de Reportes de Combustible ==========
+service ReportesService {
+  // KPIs
+  rpc GetConsumoPromedioCombustible(google.protobuf.Empty) returns (ConsumoPromedioResponse);
+  
+  // Reportes gráficos
+  rpc GetConsumoPorRuta(google.protobuf.Empty) returns (stream ConsumoPorRutaDto);
+}
+
+// ========== Mensajes de Respuesta ==========
+
+message ConsumoPromedioResponse {
+  double consumoPromedio = 1;
+  int32 totalRegistros = 2;
+}
+
+message ConsumoPorRutaDto {
+  int32 rutaId = 1;
+  string rutaNombre = 2;
+  double consumoPromedio = 3;
+  int32 totalViajes = 4;
+  double combustibleTotalEstimado = 5;
+  double combustibleTotalReal = 6;
+}

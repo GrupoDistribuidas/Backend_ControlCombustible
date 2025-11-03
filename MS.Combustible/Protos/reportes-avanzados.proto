@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Combustible.Protos";
+
+package combustible;
+
+import "google/protobuf/empty.proto";
+
+// ========== Servicios de Reportes Avanzados de Combustible ==========
+service ReportesAvanzadosCombustibleService {
+  // Reportes de eficiencia y consumo
+  rpc GetConsumoPorTipoVehiculo(google.protobuf.Empty) returns (stream ConsumoPorTipoVehiculoDto);
+  rpc GetDesviacionesCombustible(google.protobuf.Empty) returns (stream DesviacionCombustibleDto);
+  rpc GetVehiculosMasEficientes(TopVehiculosRequest) returns (stream VehiculoEficienciaDto);
+  rpc GetVehiculosMenosEficientes(TopVehiculosRequest) returns (stream VehiculoEficienciaDto);
+  rpc GetAsignacionesActivas(google.protobuf.Empty) returns (AsignacionesActivasResponse);
+}
+
+// ========== Mensajes de Request ==========
+
+message TopVehiculosRequest {
+  int32 limite = 1; // Top N vehículos (default: 10)
+}
+
+// ========== Mensajes de Respuesta ==========
+
+message ConsumoPorTipoVehiculoDto {
+  int32 tipoVehiculoId = 1;
+  string tipoVehiculoNombre = 2;
+  double consumoPromedioReal = 3;
+  double consumoPromedioEstimado = 4;
+  double desviacionPromedio = 5;
+  int32 totalViajes = 6;
+  double combustibleTotalReal = 7;
+}
+
+message DesviacionCombustibleDto {
+  int32 registroId = 1;
+  int32 asignacionId = 2;
+  int32 rutaId = 3;
+  string rutaNombre = 4;
+  int32 vehiculoId = 5;
+  string vehiculoNombre = 6;
+  double combustibleEstimado = 7;
+  double combustibleReal = 8;
+  double desviacion = 9;
+  double porcentajeDesviacion = 10;
+  string motivo = 11;
+}
+
+message VehiculoEficienciaDto {
+  int32 vehiculoId = 1;
+  string vehiculoNombre = 2;
+  string vehiculoPlaca = 3;
+  string tipoVehiculo = 4;
+  double ratioEficiencia = 5; // CombustibleReal / CombustibleEstimado
+  int32 totalViajes = 6;
+  double consumoPromedioReal = 7;
+  double ahorroCombustible = 8; // Estimado - Real (positivo = ahorro)
+}
+
+message AsignacionesActivasResponse {
+  int32 totalAsignacionesActivas = 1;
+  int32 totalAsignacionesPendientes = 2;
+  int32 totalAsignacionesCompletadas = 3;
+  int32 totalAsignacionesCanceladas = 4;
+  int32 choferesEnRuta = 5;
+  int32 vehiculosAsignados = 6;
+}

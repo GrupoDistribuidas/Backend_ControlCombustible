@@ -157,6 +157,216 @@ namespace MS.Combustible.Infrastructure.Repositories
             return count > 0;
         }
 
+        // ========== Métodos para Reportes ==========
+
+        public async Task<double> GetConsumoPromedioAsync()
+        {
+            var query = "SELECT AVG(CombustibleReal) as ConsumoPromedio FROM registrosconsumo";
+            var result = await _db.ExecuteScalarAsync(query);
+            return result != null && result != DBNull.Value ? Convert.ToDouble(result) : 0.0;
+        }
+
+        public async Task<int> GetTotalRegistrosAsync()
+        {
+            var query = "SELECT COUNT(*) FROM registrosconsumo";
+            var result = await _db.ExecuteScalarAsync(query);
+            return result != null ? Convert.ToInt32(result) : 0;
+        }
+
+        public async Task<List<(int RutaId, double ConsumoPromedio, int TotalViajes, double TotalEstimado, double TotalReal)>> GetConsumoPorRutaAsync()
+        {
+            var query = @"
+                SELECT 
+                    ar.RutaId,
+                    AVG(rc.CombustibleReal) as ConsumoPromedio,
+                    COUNT(rc.Id) as TotalViajes,
+                    SUM(rc.CombustibleEstimado) as TotalEstimado,
+                    SUM(rc.CombustibleReal) as TotalReal
+                FROM registrosconsumo rc
+                INNER JOIN asignacionesrutas ar ON rc.AsignacionRutaId = ar.Id
+                GROUP BY ar.RutaId
+                ORDER BY ConsumoPromedio DESC";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, double, int, double, double)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["RutaId"]),
+                    Convert.ToDouble(row["ConsumoPromedio"]),
+                    Convert.ToInt32(row["TotalViajes"]),
+                    Convert.ToDouble(row["TotalEstimado"]),
+                    Convert.ToDouble(row["TotalReal"])
+                ));
+            }
+
+            return resultado;
+        }
+
+        // ========== Métodos para Reportes Avanzados ==========
+
+        public async Task<List<(int TipoVehiculoId, string TipoVehiculoNombre, double ConsumoPromedioReal, double ConsumoPromedioEstimado, double DesviacionPromedio, int TotalViajes, double CombustibleTotalReal)>> GetConsumoPorTipoVehiculoAsync()
+        {
+            // Solo consulta FuelDB - El enriquecimiento se hace en el servicio gRPC
+            var query = @"
+                SELECT 
+                    ar.VehiculoId as TipoVehiculoId,
+                    '' as TipoVehiculoNombre,
+                    AVG(rc.CombustibleReal) as ConsumoPromedioReal,
+                    AVG(rc.CombustibleEstimado) as ConsumoPromedioEstimado,
+                    AVG(rc.CombustibleReal - rc.CombustibleEstimado) as DesviacionPromedio,
+                    COUNT(rc.Id) as TotalViajes,
+                    SUM(rc.CombustibleReal) as CombustibleTotalReal
+                FROM registrosconsumo rc
+                INNER JOIN asignacionesrutas ar ON rc.AsignacionRutaId = ar.Id
+                GROUP BY ar.VehiculoId
+                ORDER BY ConsumoPromedioReal DESC";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, string, double, double, double, int, double)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["TipoVehiculoId"]),
+                    row["TipoVehiculoNombre"]?.ToString() ?? "",
+                    Convert.ToDouble(row["ConsumoPromedioReal"]),
+                    Convert.ToDouble(row["ConsumoPromedioEstimado"]),
+                    Convert.ToDouble(row["DesviacionPromedio"]),
+                    Convert.ToInt32(row["TotalViajes"]),
+                    Convert.ToDouble(row["CombustibleTotalReal"])
+                ));
+            }
+
+            return resultado;
+        }
+
+        public async Task<List<(int RegistroId, int AsignacionId, int RutaId, string RutaNombre, int VehiculoId, string VehiculoNombre, double CombustibleEstimado, double CombustibleReal, double Desviacion, double PorcentajeDesviacion, string Motivo)>> GetDesviacionesCombustibleAsync(int limite = 50)
+        {
+            // Solo consulta FuelDB - El enriquecimiento se hace en el servicio gRPC
+            var query = $@"
+                SELECT 
+                    rc.Id as RegistroId,
+                    rc.AsignacionRutaId as AsignacionId,
+                    ar.RutaId,
+                    '' as RutaNombre,
+                    ar.VehiculoId,
+                    '' as VehiculoNombre,
+                    rc.CombustibleEstimado,
+                    rc.CombustibleReal,
+                    (rc.CombustibleReal - rc.CombustibleEstimado) as Desviacion,
+                    ((rc.CombustibleReal - rc.CombustibleEstimado) / rc.CombustibleEstimado * 100) as PorcentajeDesviacion,
+                    COALESCE(rc.Motivo, '') as Motivo
+                FROM registrosconsumo rc
+                INNER JOIN asignacionesrutas ar ON rc.AsignacionRutaId = ar.Id
+                WHERE ABS(rc.CombustibleReal - rc.CombustibleEstimado) > 0.01
+                ORDER BY ABS(rc.CombustibleReal - rc.CombustibleEstimado) DESC
+                LIMIT {limite}";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, int, int, string, int, string, double, double, double, double, string)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["RegistroId"]),
+                    Convert.ToInt32(row["AsignacionId"]),
+                    Convert.ToInt32(row["RutaId"]),
+                    row["RutaNombre"]?.ToString() ?? "",
+                    Convert.ToInt32(row["VehiculoId"]),
+                    row["VehiculoNombre"]?.ToString() ?? "",
+                    Convert.ToDouble(row["CombustibleEstimado"]),
+                    Convert.ToDouble(row["CombustibleReal"]),
+                    Convert.ToDouble(row["Desviacion"]),
+                    Convert.ToDouble(row["PorcentajeDesviacion"]),
+                    row["Motivo"]?.ToString() ?? ""
+                ));
+            }
+
+            return resultado;
+        }
+
+        public async Task<List<(int VehiculoId, string VehiculoNombre, string VehiculoPlaca, string TipoVehiculo, double RatioEficiencia, int TotalViajes, double ConsumoPromedioReal, double AhorroCombustible)>> GetVehiculosMasEficientesAsync(int limite = 10)
+        {
+            // Solo consulta FuelDB - El enriquecimiento se hace en el servicio gRPC
+            var query = $@"
+                SELECT 
+                    ar.VehiculoId,
+                    '' as VehiculoNombre,
+                    '' as VehiculoPlaca,
+                    '' as TipoVehiculo,
+                    (SUM(rc.CombustibleReal) / NULLIF(SUM(rc.CombustibleEstimado), 0)) as RatioEficiencia,
+                    COUNT(rc.Id) as TotalViajes,
+                    AVG(rc.CombustibleReal) as ConsumoPromedioReal,
+                    (SUM(rc.CombustibleEstimado) - SUM(rc.CombustibleReal)) as AhorroCombustible
+                FROM registrosconsumo rc
+                INNER JOIN asignacionesrutas ar ON rc.AsignacionRutaId = ar.Id
+                GROUP BY ar.VehiculoId
+                HAVING TotalViajes >= 1
+                ORDER BY RatioEficiencia ASC
+                LIMIT {limite}";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, string, string, string, double, int, double, double)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["VehiculoId"]),
+                    row["VehiculoNombre"]?.ToString() ?? "",
+                    row["VehiculoPlaca"]?.ToString() ?? "",
+                    row["TipoVehiculo"]?.ToString() ?? "",
+                    Convert.ToDouble(row["RatioEficiencia"]),
+                    Convert.ToInt32(row["TotalViajes"]),
+                    Convert.ToDouble(row["ConsumoPromedioReal"]),
+                    Convert.ToDouble(row["AhorroCombustible"])
+                ));
+            }
+
+            return resultado;
+        }
+
+        public async Task<List<(int VehiculoId, string VehiculoNombre, string VehiculoPlaca, string TipoVehiculo, double RatioEficiencia, int TotalViajes, double ConsumoPromedioReal, double AhorroCombustible)>> GetVehiculosMenosEficientesAsync(int limite = 10)
+        {
+            // Solo consulta FuelDB - El enriquecimiento se hace en el servicio gRPC
+            var query = $@"
+                SELECT 
+                    ar.VehiculoId,
+                    '' as VehiculoNombre,
+                    '' as VehiculoPlaca,
+                    '' as TipoVehiculo,
+                    (SUM(rc.CombustibleReal) / NULLIF(SUM(rc.CombustibleEstimado), 0)) as RatioEficiencia,
+                    COUNT(rc.Id) as TotalViajes,
+                    AVG(rc.CombustibleReal) as ConsumoPromedioReal,
+                    (SUM(rc.CombustibleEstimado) - SUM(rc.CombustibleReal)) as AhorroCombustible
+                FROM registrosconsumo rc
+                INNER JOIN asignacionesrutas ar ON rc.AsignacionRutaId = ar.Id
+                GROUP BY ar.VehiculoId
+                HAVING TotalViajes >= 1
+                ORDER BY RatioEficiencia DESC
+                LIMIT {limite}";
+
+            var dataTable = await _db.ExecuteQueryAsync(query);
+            var resultado = new List<(int, string, string, string, double, int, double, double)>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                resultado.Add((
+                    Convert.ToInt32(row["VehiculoId"]),
+                    row["VehiculoNombre"]?.ToString() ?? "",
+                    row["VehiculoPlaca"]?.ToString() ?? "",
+                    row["TipoVehiculo"]?.ToString() ?? "",
+                    Convert.ToDouble(row["RatioEficiencia"]),
+                    Convert.ToInt32(row["TotalViajes"]),
+                    Convert.ToDouble(row["ConsumoPromedioReal"]),
+                    Convert.ToDouble(row["AhorroCombustible"])
+                ));
+            }
+
+            return resultado;
+        }
+
         private RegistroConsumo MapToEntity(DataRow row)
         {
             return new RegistroConsumo
