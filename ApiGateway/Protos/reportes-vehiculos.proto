@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option csharp_namespace = "MS.Vehiculos.Protos";
+
+package vehiculos;
+
+import "google/protobuf/empty.proto";
+
+// ========== Servicios de Reportes de Vehículos ==========
+service ReportesVehiculosService {
+  // KPIs
+  rpc GetTotalVehiculosActivos(google.protobuf.Empty) returns (TotalVehiculosActivosResponse);
+  
+  // Reportes gráficos
+  rpc GetVehiculosPorTipo(google.protobuf.Empty) returns (stream VehiculosPorTipoDto);
+  rpc GetVehiculosPorEstado(google.protobuf.Empty) returns (stream VehiculosPorEstadoDto);
+}
+
+// ========== Mensajes de Respuesta ==========
+
+message TotalVehiculosActivosResponse {
+  int32 totalActivos = 1;
+  int32 totalInactivos = 2;
+  int32 totalGeneral = 3;
+}
+
+message VehiculosPorTipoDto {
+  int32 tipoMaquinariaId = 1;
+  string tipoNombre = 2;
+  int32 cantidad = 3;
+}
+
+message VehiculosPorEstadoDto {
+  string disponibilidad = 1; // Disponible, En mantenimiento, No Disponible
+  int32 cantidad = 2;
+}
