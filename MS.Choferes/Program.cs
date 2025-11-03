@@ -70,6 +70,7 @@ namespace MS.Choferes
             // Configurar gRPC
             app.MapGrpcService<MS.Choferes.Services.TiposGrpcService>();
             app.MapGrpcService<MS.Choferes.Services.ChoferesGrpcService>();
+            app.MapGrpcService<MS.Choferes.Services.ReportesChoferesGrpcService>();
             // Mapear reflection solo en desarrollo
             if (app.Environment.IsDevelopment())
             {
