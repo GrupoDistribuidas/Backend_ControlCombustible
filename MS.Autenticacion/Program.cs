@@ -19,7 +19,8 @@ namespace MS.Autenticacion
             var builder = WebApplication.CreateBuilder(args);
 
             // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
-            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5001";
+            // Usar 0.0.0.0 para aceptar conexiones desde otros contenedores
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://0.0.0.0:5001";
             builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
 
             // Logging: Agrega para ver logs en consola (útil para debugging)
@@ -42,6 +43,16 @@ namespace MS.Autenticacion
             builder.Services.AddScoped<IRolRepository, RolRepository>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+
+            // ✅ Agregar Health Checks con verificación de MySQL
+            builder.Services.AddHealthChecks()
+                .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+                .AddMySql(
+                    connectionString: BuildConnectionString(),
+                    name: "mysql-auth",
+                    timeout: TimeSpan.FromSeconds(3),
+                    tags: new[] { "db", "mysql" }
+                );
 
             // Configuración JWT
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET no configurado en .env");
@@ -109,9 +120,30 @@ namespace MS.Autenticacion
             // Configurar controladores HTTP
             app.MapControllers();
 
+            // ✅ Configurar Health Checks
+            app.MapHealthChecks("/health");
+            app.MapHealthChecks("/ready");
+
             app.MapGet("/", () => "Microservicio de Autenticación - gRPC y HTTP endpoints disponibles. Swagger: /swagger");
 
             app.Run();
+        }
+
+        // ✅ Método helper para construir connection string (usado en Health Check)
+        private static string BuildConnectionString()
+        {
+            var host = Environment.GetEnvironmentVariable("DB_HOST") ?? 
+                       Environment.GetEnvironmentVariable("AUTH_DB_HOST") ?? "localhost";
+            var port = Environment.GetEnvironmentVariable("DB_PORT") ?? 
+                       Environment.GetEnvironmentVariable("AUTH_DB_PORT") ?? "3306";
+            var database = Environment.GetEnvironmentVariable("DB_NAME") ?? 
+                          Environment.GetEnvironmentVariable("AUTH_DB_NAME") ?? "AuthDB";
+            var user = Environment.GetEnvironmentVariable("DB_USER") ?? 
+                      Environment.GetEnvironmentVariable("AUTH_DB_USER") ?? "root";
+            var password = Environment.GetEnvironmentVariable("DB_PASS") ?? 
+                          Environment.GetEnvironmentVariable("AUTH_DB_PASS") ?? "root";
+
+            return $"Server={host};Port={port};Database={database};Uid={user};Pwd={password};";
         }
     }
 }

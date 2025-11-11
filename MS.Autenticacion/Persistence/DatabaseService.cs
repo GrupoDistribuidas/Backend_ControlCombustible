@@ -14,12 +14,18 @@ namespace MS.Autenticacion.Persistence
         {
             _logger = logger;
 
-            // Leer directamente de variables de entorno (cargadas por DotNetEnv en Program.cs)
-            var host = Environment.GetEnvironmentVariable("AUTH_DB_HOST") ?? "localhost";
-            var port = Environment.GetEnvironmentVariable("AUTH_DB_PORT") ?? "3306";
-            var database = Environment.GetEnvironmentVariable("AUTH_DB_NAME") ?? "AuthDB";
-            var user = Environment.GetEnvironmentVariable("AUTH_DB_USER") ?? "root";
-            var password = Environment.GetEnvironmentVariable("AUTH_DB_PASS") ?? "root";
+            // Leer variables de entorno con soporte para Docker
+            // Prioridad: variables específicas de servicio -> variables genéricas -> valores por defecto
+            var host = Environment.GetEnvironmentVariable("DB_HOST") ?? 
+                       Environment.GetEnvironmentVariable("AUTH_DB_HOST") ?? "localhost";
+            var port = Environment.GetEnvironmentVariable("DB_PORT") ?? 
+                       Environment.GetEnvironmentVariable("AUTH_DB_PORT") ?? "3306";
+            var database = Environment.GetEnvironmentVariable("DB_NAME") ?? 
+                          Environment.GetEnvironmentVariable("AUTH_DB_NAME") ?? "AuthDB";
+            var user = Environment.GetEnvironmentVariable("DB_USER") ?? 
+                      Environment.GetEnvironmentVariable("AUTH_DB_USER") ?? "root";
+            var password = Environment.GetEnvironmentVariable("DB_PASS") ?? 
+                          Environment.GetEnvironmentVariable("AUTH_DB_PASS") ?? "root";
 
             _connectionString = $"Server={host};Port={port};Database={database};Uid={user};Pwd={password};";
 
