@@ -15,15 +15,42 @@ namespace ApiGateway
 
             var builder = WebApplication.CreateBuilder(args);
 
+            // ✅ Configurar URLs de microservicios para Docker
+            // En Docker, usamos nombres de contenedores; en local, localhost
+            var isDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ||
+                          Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Docker";
+
+            var msAuthGrpcUrl = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL") ?? 
+                               (isDocker ? "http://autenticacion:5001" : "http://localhost:5001");
+            var msVehiculosGrpcUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? 
+                                    (isDocker ? "http://vehiculos:5135" : "http://localhost:5135");
+            var msChoferesGrpcUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? 
+                                   (isDocker ? "http://choferes:5133" : "http://localhost:5133");
+            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? 
+                                (isDocker ? "http://rutas:5174" : "http://localhost:5174");
+            var msCombustibleGrpcUrl = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL") ?? 
+                                      (isDocker ? "http://combustible:5136" : "http://localhost:5136");
+
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Services:AuthService:Url"] = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL"),
-                ["Services:VehiculosService:Url"] = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL"),
-                ["Services:ChoferesService:Url"] = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL"),
-                ["Services:CombustibleService:Url"] = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL"),
-                ["Services:RutasService:Url"] = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL")
-            }.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
-             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                ["Services:AuthService:Url"] = msAuthGrpcUrl,
+                ["Services:VehiculosService:Url"] = msVehiculosGrpcUrl,
+                ["Services:ChoferesService:Url"] = msChoferesGrpcUrl,
+                ["Services:CombustibleService:Url"] = msCombustibleGrpcUrl,
+                ["Services:RutasService:Url"] = msRutasGrpcUrl
+            });
+
+            // ✅ Configurar CORS para permitir solicitudes del frontend
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:5174")
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials();
+                });
+            });
 
             // Agregar controladores
             builder.Services.AddControllers();
@@ -103,7 +130,6 @@ Para obtener un token:
             });
 
             // Configurar gRPC client factory (para llamar a MS.Autenticacion)
-            var msAuthGrpcUrl = Environment.GetEnvironmentVariable("MS_AUTENTICACION_GRPC_URL") ?? "http://localhost:5001";
             builder.Services.AddGrpcClient<MS.Autenticacion.Grpc.AuthService.AuthServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msAuthGrpcUrl);
@@ -116,7 +142,6 @@ Para obtener un token:
             });
 
             // Configurar cliente gRPC para MS.Vehiculos
-            var msVehiculosGrpcUrl = Environment.GetEnvironmentVariable("MS_VEHICULOS_GRPC_URL") ?? "http://localhost:5135";
             builder.Services.AddGrpcClient<MS.Vehiculos.Protos.VehiculosService.VehiculosServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msVehiculosGrpcUrl);
@@ -129,14 +154,12 @@ Para obtener un token:
             });
 
             // Configurar cliente gRPC para MS.Choferes
-            var msChoferesGrpcUrl = Environment.GetEnvironmentVariable("MS_CHOFERES_GRPC_URL") ?? "http://localhost:5133";
             builder.Services.AddGrpcClient<MS.Choferes.Protos.ChoferesService.ChoferesServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msChoferesGrpcUrl);
             });
 
             // Configurar cliente gRPC para MS.Rutas
-            var msRutasGrpcUrl = Environment.GetEnvironmentVariable("MS_RUTAS_GRPC_URL") ?? "http://localhost:5174";
             builder.Services.AddGrpcClient<MS.Rutas.Protos.RutasService.RutasServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msRutasGrpcUrl);
@@ -149,7 +172,6 @@ Para obtener un token:
             });
 
             // Configurar cliente gRPC para MS.Combustible
-            var msCombustibleGrpcUrl = Environment.GetEnvironmentVariable("MS_COMBUSTIBLE_GRPC_URL") ?? "http://localhost:5136";
             builder.Services.AddGrpcClient<MS.Combustible.Protos.RegistroConsumoService.RegistroConsumoServiceClient>((provider, options) =>
             {
                 options.Address = new Uri(msCombustibleGrpcUrl);
@@ -222,6 +244,10 @@ Para obtener un token:
                     };
                 });
 
+            // ✅ Agregar Health Checks
+            builder.Services.AddHealthChecks()
+                .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
+
             var app = builder.Build();
 
             // Pipeline de la app
@@ -235,11 +261,18 @@ Para obtener un token:
                 });
             }
 
+            // ✅ Habilitar CORS antes de otros middlewares
+            app.UseCors("AllowFrontend");
+
             app.UseHttpsRedirection();
 
             // 🔐 Middleware de autenticación y autorización
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // ✅ Configurar Health Checks
+            app.MapHealthChecks("/health");
+            app.MapHealthChecks("/ready");
 
             app.MapControllers();
 

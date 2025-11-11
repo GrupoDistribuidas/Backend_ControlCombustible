@@ -1,0 +1,49 @@
+# Archivos y directorios a ignorar en el build de Docker
+
+# Directorios de binarios
+**/bin/
+**/obj/
+**/out/
+
+# Archivos de usuario de Visual Studio
+**/.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Archivos de build
+*.dll
+*.exe
+*.pdb
+
+# Archivos de NuGet
+*.nupkg
+**/packages/*
+
+# Archivos de prueba
+TestResults/
+*.trx
+
+# Archivos de configuración local
+**/.env
+**/.env.local
+**/appsettings.Development.json
+
+# Directorios de Docker
+**/docker-compose.dcproj.user
+
+# Node modules (si aplica al frontend)
+**/node_modules/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

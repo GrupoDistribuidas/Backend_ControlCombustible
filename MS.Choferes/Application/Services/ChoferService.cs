@@ -72,12 +72,16 @@ namespace MS.Choferes.Application.Services
             var existing = await _repo.GetByIdentificacionAsync(dto.Identificacion);
             if (existing != null) throw new ArgumentException("Identificacion ya registrada");
 
+            // Construir nombre completo
+            var nombreCompleto = $"{dto.PrimerNombre} {(!string.IsNullOrWhiteSpace(dto.SegundoNombre) ? dto.SegundoNombre + " " : "")}{dto.PrimerApellido} {(!string.IsNullOrWhiteSpace(dto.SegundoApellido) ? dto.SegundoApellido : "")}".Trim();
+
             var chofer = new Chofer
             {
                 PrimerNombre = dto.PrimerNombre,
                 SegundoNombre = dto.SegundoNombre,
                 PrimerApellido = dto.PrimerApellido,
                 SegundoApellido = dto.SegundoApellido,
+                NombreCompleto = nombreCompleto,
                 Identificacion = dto.Identificacion,
                 FechaNacimiento = dto.FechaNacimiento,
                 Disponible = dto.Disponible,
@@ -178,6 +182,9 @@ namespace MS.Choferes.Application.Services
                 }
             }
 
+            // Construir nombre completo
+            var nombreCompleto = $"{dto.PrimerNombre} {(!string.IsNullOrWhiteSpace(dto.SegundoNombre) ? dto.SegundoNombre + " " : "")}{dto.PrimerApellido} {(!string.IsNullOrWhiteSpace(dto.SegundoApellido) ? dto.SegundoApellido : "")}".Trim();
+
             var chofer = new Chofer
             {
                 Id = dto.Id,
@@ -185,6 +192,7 @@ namespace MS.Choferes.Application.Services
                 SegundoNombre = dto.SegundoNombre,
                 PrimerApellido = dto.PrimerApellido,
                 SegundoApellido = dto.SegundoApellido,
+                NombreCompleto = nombreCompleto,
                 Identificacion = dto.Identificacion,
                 FechaNacimiento = dto.FechaNacimiento,
                 Disponible = dto.Disponible,

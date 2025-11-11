@@ -20,12 +20,18 @@ namespace MS.Combustible.Services
         {
             _logger = logger;
             
-            // Leer variables específicas de FuelDB del .env
-            var host = Environment.GetEnvironmentVariable("FUEL_DB_HOST") ?? "localhost";
-            var port = Environment.GetEnvironmentVariable("FUEL_DB_PORT") ?? "3307";
-            var database = Environment.GetEnvironmentVariable("FUEL_DB_NAME") ?? "FuelDB";
-            var user = Environment.GetEnvironmentVariable("FUEL_DB_USER") ?? "root";
-            var password = Environment.GetEnvironmentVariable("FUEL_DB_PASS") ?? "root";
+            // Leer variables de entorno con soporte para Docker
+            // Prioridad: variables específicas de servicio -> variables genéricas -> valores por defecto
+            var host = Environment.GetEnvironmentVariable("DB_HOST") ?? 
+                       Environment.GetEnvironmentVariable("FUEL_DB_HOST") ?? "localhost";
+            var port = Environment.GetEnvironmentVariable("DB_PORT") ?? 
+                       Environment.GetEnvironmentVariable("FUEL_DB_PORT") ?? "3306";
+            var database = Environment.GetEnvironmentVariable("DB_NAME") ?? 
+                          Environment.GetEnvironmentVariable("FUEL_DB_NAME") ?? "FuelDB";
+            var user = Environment.GetEnvironmentVariable("DB_USER") ?? 
+                      Environment.GetEnvironmentVariable("FUEL_DB_USER") ?? "root";
+            var password = Environment.GetEnvironmentVariable("DB_PASS") ?? 
+                          Environment.GetEnvironmentVariable("FUEL_DB_PASS") ?? "root";
 
             _connectionString = $"Server={host};Port={port};Database={database};Uid={user};Pwd={password};";
             

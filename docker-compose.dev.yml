@@ -1,0 +1,43 @@
+# Docker Compose Override para Desarrollo
+# Este archivo sobrescribe configuraciones del docker-compose.yml para desarrollo local
+# Úsalo con: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  apigateway:
+    volumes:
+      # Hot reload para desarrollo
+      - ./ApiGateway:/src/ApiGateway:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  autenticacion:
+    volumes:
+      - ./MS.Autenticacion:/src/MS.Autenticacion:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  vehiculos:
+    volumes:
+      - ./MS.Vehiculos:/src/MS.Vehiculos:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  choferes:
+    volumes:
+      - ./MS.Choferes:/src/MS.Choferes:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  rutas:
+    volumes:
+      - ./MS.Rutas:/src/MS.Rutas:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  combustible:
+    volumes:
+      - ./MS.Combustible:/src/MS.Combustible:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development

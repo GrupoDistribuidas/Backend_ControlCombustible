@@ -1,0 +1,246 @@
+services:
+  # Microservicio de Autenticación
+  autenticacion:
+    build:
+      context: .
+      dockerfile: MS.Autenticacion/Dockerfile
+    container_name: ms_autenticacion
+    environment:
+      - ASPNETCORE_URLS=http://+:5001
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=mysql_auth
+      - DB_PORT=3306
+      - DB_NAME=AuthDB
+      - DB_USER=combustible_user
+      - DB_PASS=davidgiler21
+      - JWT_SECRET=MiClaveSuperSecretaParaJWTTokenAuthentication2024!#$$
+      - JWT_ISSUER=MS.Autenticacion
+      - JWT_AUDIENCE=MS.Autenticacion
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=mayckolchavez27@gmail.com
+      - SMTP_PASSWORD=fntq oruq qhqx odas
+      - SMTP_FROM_EMAIL=mayckolchavez27@gmail.com
+      - SMTP_FROM_NAME=Control Combustible System
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mysql_auth
+    networks:
+      - combustible_network
+
+  # Microservicio de Vehículos
+  vehiculos:
+    build:
+      context: .
+      dockerfile: MS.Vehiculos/Dockerfile
+    container_name: ms_vehiculos
+    environment:
+      - ASPNETCORE_URLS=http://+:5135
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=mysql_vehicles
+      - DB_PORT=3306
+      - DB_NAME=VehiclesDB
+      - DB_USER=combustible_user
+      - DB_PASS=davidgiler21
+    ports:
+      - "5135:5135"
+    depends_on:
+      - mysql_vehicles
+    networks:
+      - combustible_network
+
+  # Microservicio de Choferes
+  choferes:
+    build:
+      context: .
+      dockerfile: MS.Choferes/Dockerfile
+    container_name: ms_choferes
+    environment:
+      - ASPNETCORE_URLS=http://+:5133
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=mysql_drivers
+      - DB_PORT=3306
+      - DB_NAME=DriversDB
+      - DB_USER=combustible_user
+      - DB_PASS=davidgiler21
+      - MS_AUTENTICACION_GRPC_URL=http://autenticacion:5001
+    ports:
+      - "5133:5133"
+    depends_on:
+      - mysql_drivers
+      - autenticacion
+    networks:
+      - combustible_network
+
+  # Microservicio de Rutas
+  rutas:
+    build:
+      context: .
+      dockerfile: MS.Rutas/Dockerfile
+    container_name: ms_rutas
+    environment:
+      - ASPNETCORE_URLS=http://+:5174
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=mysql_routes
+      - DB_PORT=3306
+      - DB_NAME=RoutesDB
+      - DB_USER=combustible_user
+      - DB_PASS=davidgiler21
+    ports:
+      - "5174:5174"
+    depends_on:
+      - mysql_routes
+    networks:
+      - combustible_network
+
+  # Microservicio de Combustible
+  combustible:
+    build:
+      context: .
+      dockerfile: MS.Combustible/Dockerfile
+    container_name: ms_combustible
+    environment:
+      - ASPNETCORE_URLS=http://+:5136
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_HOST=mysql_fuel
+      - DB_PORT=3306
+      - DB_NAME=FuelDB
+      - DB_USER=combustible_user
+      - DB_PASS=davidgiler21
+      - MS_CHOFERES_GRPC_URL=http://choferes:5133
+      - MS_VEHICULOS_GRPC_URL=http://vehiculos:5135
+      - MS_RUTAS_GRPC_URL=http://rutas:5174
+    ports:
+      - "5136:5136"
+    depends_on:
+      - mysql_fuel
+      - choferes
+      - vehiculos
+      - rutas
+    networks:
+      - combustible_network
+
+  # API Gateway
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: apigateway_combustible
+    environment:
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - MS_AUTENTICACION_GRPC_URL=http://autenticacion:5001
+      - MS_VEHICULOS_GRPC_URL=http://vehiculos:5135
+      - MS_CHOFERES_GRPC_URL=http://choferes:5133
+      - MS_RUTAS_GRPC_URL=http://rutas:5174
+      - MS_COMBUSTIBLE_GRPC_URL=http://combustible:5136
+      - JWT_SECRET=MiClaveSuperSecretaParaJWTTokenAuthentication2024!#$$
+      - JWT_ISSUER=MS.Autenticacion
+      - JWT_AUDIENCE=MS.Autenticacion
+    ports:
+      - "5000:5000"
+    depends_on:
+      - autenticacion
+      - vehiculos
+      - choferes
+      - rutas
+      - combustible
+    networks:
+      - combustible_network
+
+  # Base de datos MySQL - Autenticación
+  mysql_auth:
+    image: mysql:8.0
+    container_name: mysql_auth
+    environment:
+      MYSQL_ROOT_PASSWORD: davidgiler21
+      MYSQL_DATABASE: AuthDB
+      MYSQL_USER: combustible_user
+      MYSQL_PASSWORD: davidgiler21
+    ports:
+      - "33071:3306"
+    volumes:
+      - mysql_auth_data:/var/lib/mysql
+      - ./docker/mysql-init/auth:/docker-entrypoint-initdb.d:ro
+    networks:
+      - combustible_network
+
+  # Base de datos MySQL - Vehículos
+  mysql_vehicles:
+    image: mysql:8.0
+    container_name: mysql_vehicles
+    environment:
+      MYSQL_ROOT_PASSWORD: davidgiler21
+      MYSQL_DATABASE: VehiclesDB
+      MYSQL_USER: combustible_user
+      MYSQL_PASSWORD: davidgiler21
+    ports:
+      - "33072:3306"
+    volumes:
+      - mysql_vehicles_data:/var/lib/mysql
+      - ./docker/mysql-init/vehicles:/docker-entrypoint-initdb.d:ro
+    networks:
+      - combustible_network
+
+  # Base de datos MySQL - Choferes
+  mysql_drivers:
+    image: mysql:8.0
+    container_name: mysql_drivers
+    environment:
+      MYSQL_ROOT_PASSWORD: davidgiler21
+      MYSQL_DATABASE: DriversDB
+      MYSQL_USER: combustible_user
+      MYSQL_PASSWORD: davidgiler21
+    ports:
+      - "33073:3306"
+    volumes:
+      - mysql_drivers_data:/var/lib/mysql
+      - ./docker/mysql-init/drivers:/docker-entrypoint-initdb.d:ro
+    networks:
+      - combustible_network
+
+  # Base de datos MySQL - Rutas
+  mysql_routes:
+    image: mysql:8.0
+    container_name: mysql_routes
+    environment:
+      MYSQL_ROOT_PASSWORD: davidgiler21
+      MYSQL_DATABASE: RoutesDB
+      MYSQL_USER: combustible_user
+      MYSQL_PASSWORD: davidgiler21
+    ports:
+      - "33074:3306"
+    volumes:
+      - mysql_routes_data:/var/lib/mysql
+      - ./docker/mysql-init/routes:/docker-entrypoint-initdb.d:ro
+    networks:
+      - combustible_network
+
+  # Base de datos MySQL - Combustible
+  mysql_fuel:
+    image: mysql:8.0
+    container_name: mysql_fuel
+    environment:
+      MYSQL_ROOT_PASSWORD: davidgiler21
+      MYSQL_DATABASE: FuelDB
+      MYSQL_USER: combustible_user
+      MYSQL_PASSWORD: davidgiler21
+    ports:
+      - "33075:3306"
+    volumes:
+      - mysql_fuel_data:/var/lib/mysql
+      - ./docker/mysql-init/fuel:/docker-entrypoint-initdb.d:ro
+    networks:
+      - combustible_network
+
+volumes:
+  mysql_auth_data:
+  mysql_vehicles_data:
+  mysql_drivers_data:
+  mysql_routes_data:
+  mysql_fuel_data:
+
+networks:
+  combustible_network:
+    driver: bridge
