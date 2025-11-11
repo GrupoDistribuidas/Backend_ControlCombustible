@@ -20,12 +20,18 @@ namespace MS.Rutas.Services
         {
             _logger = logger;
             
-            // Leer variables específicas de RoutesDB del .env
-            var host = Environment.GetEnvironmentVariable("ROUTES_DB_HOST") ?? "localhost";
-            var port = Environment.GetEnvironmentVariable("ROUTES_DB_PORT") ?? "3306";
-            var database = Environment.GetEnvironmentVariable("ROUTES_DB_NAME") ?? "RoutesDB";
-            var user = Environment.GetEnvironmentVariable("ROUTES_DB_USER") ?? "root";
-            var password = Environment.GetEnvironmentVariable("ROUTES_DB_PASS") ?? "root";
+            // Leer variables de entorno con soporte para Docker
+            // Prioridad: variables específicas de servicio -> variables genéricas -> valores por defecto
+            var host = Environment.GetEnvironmentVariable("DB_HOST") ?? 
+                       Environment.GetEnvironmentVariable("ROUTES_DB_HOST") ?? "localhost";
+            var port = Environment.GetEnvironmentVariable("DB_PORT") ?? 
+                       Environment.GetEnvironmentVariable("ROUTES_DB_PORT") ?? "3306";
+            var database = Environment.GetEnvironmentVariable("DB_NAME") ?? 
+                          Environment.GetEnvironmentVariable("ROUTES_DB_NAME") ?? "RoutesDB";
+            var user = Environment.GetEnvironmentVariable("DB_USER") ?? 
+                      Environment.GetEnvironmentVariable("ROUTES_DB_USER") ?? "root";
+            var password = Environment.GetEnvironmentVariable("DB_PASS") ?? 
+                          Environment.GetEnvironmentVariable("ROUTES_DB_PASS") ?? "root";
 
             _connectionString = $"Server={host};Port={port};Database={database};Uid={user};Pwd={password};";
             
