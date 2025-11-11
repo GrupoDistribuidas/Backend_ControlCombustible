@@ -10,7 +10,7 @@ COPY . ./
 WORKDIR /src/ApiGateway
 RUN dotnet publish "ApiGateway.csproj" -c Release -o /app/publish
 
-# Build runtime image
+# Build
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish ./
