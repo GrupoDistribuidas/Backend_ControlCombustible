@@ -18,8 +18,8 @@ namespace MS.Choferes.Infraestructure.Repositories
 
         public async Task<int> CreateAsync(Chofer chofer)
         {
-            var query = @"INSERT INTO Choferes (PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, Identificacion, FechaNacimiento, Disponible, UsuarioId, TipoMaquinariaId, Estado)
-VALUES (@PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido, @Identificacion, @FechaNacimiento, @Disponible, @UsuarioId, @TipoMaquinariaId, @Estado);
+            var query = @"INSERT INTO Choferes (PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, NombreCompleto, Identificacion, FechaNacimiento, Disponible, UsuarioId, TipoMaquinariaId, Estado)
+VALUES (@PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido, @NombreCompleto, @Identificacion, @FechaNacimiento, @Disponible, @UsuarioId, @TipoMaquinariaId, @Estado);
 SELECT LAST_INSERT_ID();";
 
             var parameters = new Dictionary<string, object>
@@ -28,6 +28,7 @@ SELECT LAST_INSERT_ID();";
                 { "@SegundoNombre", chofer.SegundoNombre ?? (object)DBNull.Value },
                 { "@PrimerApellido", chofer.PrimerApellido },
                 { "@SegundoApellido", chofer.SegundoApellido ?? (object)DBNull.Value },
+                { "@NombreCompleto", chofer.NombreCompleto },
                 { "@Identificacion", chofer.Identificacion },
                 { "@FechaNacimiento", chofer.FechaNacimiento },
                 { "@Disponible", chofer.Disponible },
@@ -174,6 +175,7 @@ SELECT LAST_INSERT_ID();";
                 "SegundoNombre = @SegundoNombre",
                 "PrimerApellido = @PrimerApellido",
                 "SegundoApellido = @SegundoApellido",
+                "NombreCompleto = @NombreCompleto",
                 "Identificacion = @Identificacion",
                 "FechaNacimiento = @FechaNacimiento",
                 "Disponible = @Disponible",
@@ -193,6 +195,7 @@ SELECT LAST_INSERT_ID();";
                 { "@SegundoNombre", chofer.SegundoNombre ?? (object)DBNull.Value },
                 { "@PrimerApellido", chofer.PrimerApellido },
                 { "@SegundoApellido", chofer.SegundoApellido ?? (object)DBNull.Value },
+                { "@NombreCompleto", chofer.NombreCompleto },
                 { "@Identificacion", chofer.Identificacion },
                 { "@FechaNacimiento", chofer.FechaNacimiento },
                 { "@Disponible", chofer.Disponible },

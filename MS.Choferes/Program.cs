@@ -14,7 +14,7 @@ namespace MS.Choferes
             var builder = WebApplication.CreateBuilder(args);
 
             // Configure Kestrel for HTTP/2 over HTTP (insecure) for gRPC
-            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://localhost:5133";
+            builder.Configuration["Kestrel:Endpoints:gRPC:Url"] = "http://0.0.0.0:5133";
             builder.Configuration["Kestrel:Endpoints:gRPC:Protocols"] = "Http2";
 
             // Add services to the container.
@@ -58,6 +58,16 @@ namespace MS.Choferes
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // ✅ Agregar Health Checks con verificación de MySQL
+            builder.Services.AddHealthChecks()
+                .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+                .AddMySql(
+                    connectionString: BuildConnectionString(),
+                    name: "mysql-drivers",
+                    timeout: TimeSpan.FromSeconds(3),
+                    tags: new[] { "db", "mysql" }
+                );
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -80,9 +90,30 @@ namespace MS.Choferes
             // Configurar controladores HTTP
             app.MapControllers();
             
+            // ✅ Configurar Health Checks
+            app.MapHealthChecks("/health");
+            app.MapHealthChecks("/ready");
+            
             app.MapGet("/", () => "Microservicio de Choferes - gRPC y HTTP endpoints disponibles. Swagger: /swagger");
 
             app.Run();
+        }
+
+        // ✅ Método helper para construir connection string (usado en Health Check)
+        private static string BuildConnectionString()
+        {
+            var host = Environment.GetEnvironmentVariable("DB_HOST") ?? 
+                       Environment.GetEnvironmentVariable("DRIVERS_DB_HOST") ?? "localhost";
+            var port = Environment.GetEnvironmentVariable("DB_PORT") ?? 
+                       Environment.GetEnvironmentVariable("DRIVERS_DB_PORT") ?? "3306";
+            var database = Environment.GetEnvironmentVariable("DB_NAME") ?? 
+                          Environment.GetEnvironmentVariable("DRIVERS_DB_NAME") ?? "DriversDB";
+            var user = Environment.GetEnvironmentVariable("DB_USER") ?? 
+                      Environment.GetEnvironmentVariable("DRIVERS_DB_USER") ?? "root";
+            var password = Environment.GetEnvironmentVariable("DB_PASS") ?? 
+                          Environment.GetEnvironmentVariable("DRIVERS_DB_PASS") ?? "root";
+
+            return $"Server={host};Port={port};Database={database};Uid={user};Pwd={password};";
         }
     }
 }
